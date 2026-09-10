@@ -121,8 +121,8 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   const direction = new THREE.Vector3();
   function connect(o, a, b) { direction.subVectors(b, a); o.position.copy(a).add(b).multiplyScalar(.5); o.scale.set(o.userData.radius, direction.length(), o.userData.radius); o.quaternion.setFromUnitVectors(UP, direction.normalize()); }
   const stage = new THREE.Group(); scene.add(stage);
-  const stringStage = new THREE.Group(), gardenStage = new THREE.Group();
-  stage.add(stringStage, gardenStage);
+  const stringStage = new THREE.Group(), gardenStage = new THREE.Group(), tombolaStage = new THREE.Group();
+  stage.add(stringStage, gardenStage, tombolaStage); tombolaStage.visible = false;
   // A deliberately broad, original six-string instrument: every sounding
   // segment occupies the same normalized world coordinates as contact detection.
   const WORLD = 6.6;
@@ -172,6 +172,46 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     sprite.scale.set(.94, .35, 1); return sprite;
   }
   const midiLabel = labelSprite('MIDI', '#b8ddc8'); midiLabel.scale.set(.65, .245, 1); midiLabel.position.set(3.79, .54, 2.39); gardenStage.add(midiLabel);
+  // This chamber is a view of the server's collision geometry. Its six walls
+  // rotate with the reported physics angle; the renderer never invents bounces.
+  const chamber = new THREE.Group(); tombolaStage.add(chamber);
+  const chamberRadius = .43 * WORLD, chamberHeight = 1.18;
+  const chamberFrame = material(0xa0c6ad, {metalness: .32, roughness: .34, emissive: 0x344f3c, emissiveIntensity: .2});
+  const chamberGlass = material(0x9fe7bf, {transparent: true, opacity: .065, side: THREE.DoubleSide, depthWrite: false, roughness: .14});
+  const chamberFloor = mesh(new THREE.CylinderGeometry(3.42,3.55,.20,80), material(0x122219, {metalness: .24, roughness: .48}), tombolaStage); chamberFloor.position.y = -.14;
+  for (const radius of [3.08,3.30]) { const ring = mesh(new THREE.TorusGeometry(radius,.013,4,80), material(0x4e7259), tombolaStage); ring.rotation.x = Math.PI / 2; ring.position.y = -.024; }
+  for (let index = 0; index < 6; index++) {
+    const a = index * Math.PI / 3, b = (index + 1) * Math.PI / 3;
+    const x1 = Math.cos(a) * chamberRadius, z1 = Math.sin(a) * chamberRadius, x2 = Math.cos(b) * chamberRadius, z2 = Math.sin(b) * chamberRadius;
+    for (const height of [.045,chamberHeight]) {const rail=segment(chamber,chamberFrame,.025);connect(rail,new THREE.Vector3(x1,height,z1),new THREE.Vector3(x2,height,z2));}
+    const post=segment(chamber,chamberFrame,.025);connect(post,new THREE.Vector3(x1,.045,z1),new THREE.Vector3(x1,chamberHeight,z1));
+    ellipsoid(chamber,chamberFrame,[x1,chamberHeight,z1],[.065,.065,.065]);
+    const wall=mesh(new THREE.PlaneGeometry(chamberRadius,chamberHeight),chamberGlass,chamber);wall.position.set((x1+x2)/2,chamberHeight/2,(z1+z2)/2);wall.rotation.y=-Math.atan2(z2-z1,x2-x1);
+    const numeral=labelSprite(String(index+1),'#8cbd9f');numeral.scale.set(.29,.11,1);numeral.position.set((x1+x2)/2,.14,(z1+z2)/2);chamber.add(numeral);
+  }
+  const chamberName=labelSprite('CHAMBER','#aacbb4');chamberName.position.set(0,.03,3.08);chamberName.scale.set(.80,.30,1);tombolaStage.add(chamberName);
+  const impactFlashes = Array.from({length:24}, () => {
+    const halo=mesh(new THREE.RingGeometry(.10,.15,32),new THREE.MeshBasicMaterial({color:0xe7f9bf,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}),tombolaStage);halo.rotation.x=-Math.PI/2;
+    const spark=ellipsoid(tombolaStage,new THREE.MeshBasicMaterial({color:0xf5ffdf,transparent:true,opacity:0,depthWrite:false}),[0,0,0],[.075,.22,.075]);
+    return {halo,spark,struck:-100};
+  });
+  const seenCollisions=new Set();let impactCursor=0,lastPhysicsHits=null,lastPhysicsMode=false,displayedChamberAngle=null;
+  function updateChamber(physics, mode, now, running, dt) {
+    if(mode!=='tombola'){lastPhysicsMode=false;displayedChamberAngle=null;return;}
+    const hits=physics.totalHits??0,collisions=Array.isArray(physics.collisions)?physics.collisions:[];
+    if(!lastPhysicsMode||(lastPhysicsHits!==null&&hits<lastPhysicsHits)){seenCollisions.clear();collisions.forEach(hit=>seenCollisions.add(hit.id));impactFlashes.forEach(item=>item.struck=-100);}
+    lastPhysicsMode=true;lastPhysicsHits=hits;
+    // Follow only the latest observed angle with the same easing as body poses.
+    // Wrapped deltas avoid a full reverse turn across ±π; speed never advances
+    // this display independently of a simulation snapshot.
+    const targetAngle=Number.isFinite(physics.angle)?physics.angle:0,angleEase=displayedChamberAngle===null||reducedMotion||!running?1:1-Math.exp(-dt*8);
+    if(displayedChamberAngle===null)displayedChamberAngle=targetAngle;
+    const angleDelta=Math.atan2(Math.sin(targetAngle-displayedChamberAngle),Math.cos(targetAngle-displayedChamberAngle));
+    displayedChamberAngle+=angleDelta*angleEase;
+    chamber.rotation.y=-displayedChamberAngle;chamber.scale.setScalar(clamp(physics.radius??.43,.1,.5)/.43);
+    for(const collision of collisions){if(seenCollisions.has(collision.id))continue;seenCollisions.add(collision.id);if(seenCollisions.size>256)seenCollisions.delete(seenCollisions.values().next().value);const flash=impactFlashes[impactCursor++%impactFlashes.length];flash.struck=now;flash.halo.position.set(worldToScene(collision.x),.055,worldToScene(collision.y));flash.spark.position.set(worldToScene(collision.x),.22,worldToScene(collision.y));}
+    for(const flash of impactFlashes){const age=Math.max(0,now-flash.struck),pulse=Math.exp(-age*8);flash.halo.material.opacity=pulse*.9;flash.halo.scale.setScalar(1+Math.min(age,1)*4);flash.spark.material.opacity=pulse*.8;}
+  }
   // Contact highlights are driven only by composer contact events. Their
   // illustrated vibration is decorative, not a simulated acoustic waveform.
   const fallbackStrings = [.30, .38, .46, .54, .62, .70].map((y, i) => ({ id: `string-${i + 1}`, x1: .12, x2: .88, y, pitch: [48, 55, 60, 64, 67, 72][i] }));
@@ -380,7 +420,8 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = .023;
   const marker = mesh(new THREE.RingGeometry(.36, .38, 28), new THREE.MeshBasicMaterial({ color: 0xc8eabc, transparent: true, opacity: .47, side: THREE.DoubleSide, depthWrite: false }), stage);
   marker.rotation.x = -Math.PI / 2; marker.position.y = .026; marker.visible = primary;
-  return { fly, head, wings, legs, legLines, legPositions, shadow, marker, phase: 0, initial: true };
+  const noteLabel=labelSprite('C4');noteLabel.scale.set(.52,.20,1);noteLabel.visible=false;scene.add(noteLabel);
+  return { fly, head, wings, legs, legLines, legPositions, shadow, marker, noteLabel, noteText:'C4', phase: 0, initial: true };
   }
   camera.position.set(4.3, 10.8, 10); orbit.target.set(0, .12, 0); orbit.update();
   const flyObjects = new Map();
@@ -389,9 +430,11 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     setFruitKind(kind) { placement.material.color.set(fruitMaterials[kind]?.color || fruitMaterials.banana.color); },
     update(brain = {}, running = false, music = {}) {
       const now = performance.now() / 1000, dt = Math.min(.07, previous ? now - previous : .033); previous = now;
+      const mode = ['strings','ambient','tombola'].includes(music.instrumentMode) ? music.instrumentMode : 'fruit', tombolaMode=mode==='tombola';
+      if(tombolaMode!==(previousMode==='tombola')){camera.zoom=tombolaMode?1.17:1;camera.updateProjectionMatrix();}
       const flies = Array.isArray(brain.flies) && brain.flies.length ? brain.flies : [{...brain, id: 'fly-1'}];
       const ids = new Set(flies.map((state, index) => state.id ?? `fly-${index + 1}`));
-      for (const [id, model] of flyObjects) { model.fly.visible = ids.has(id); model.shadow.visible = ids.has(id); model.marker.visible = ids.has(id) && id === (flies[0]?.id ?? 'fly-1'); }
+      for (const [id, model] of flyObjects) { model.fly.visible = ids.has(id); model.shadow.visible = ids.has(id); model.noteLabel.visible=tombolaMode&&ids.has(id); model.marker.visible = ids.has(id) && id === (flies[0]?.id ?? 'fly-1'); }
       flies.forEach((state, index) => {
         const id = state.id ?? `fly-${index + 1}`;
         if (!flyObjects.has(id)) flyObjects.set(id, createFly(index === 0, flies.length <= 3 || index === 0));
@@ -402,9 +445,9 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
         if (running && !reducedMotion) model.phase += dt * (2.4 + mean * 5);
         const phase = model.phase, targetX = worldToScene(state.x ?? .5), targetZ = worldToScene(state.y ?? .5), targetY = altitude * 1.75;
         // Smooth only between observed positions. We neither extrapolate past a
-        // sample nor speed up the model's neural output. Feeding contacts and a
-        // paused world stay exactly at their reported positions.
-        const ease = model.initial || reducedMotion || !running || state.behavior === 'feeding' || state.behavior === 'resting' ? 1 : 1 - Math.exp(-dt * 8); model.initial = false;
+        // sample nor speed up the model's neural output. A paused world snaps
+        // to its reported pose, as do stationary contacts outside the chamber.
+        const ease = model.initial || reducedMotion || !running || (!tombolaMode && (state.behavior === 'feeding' || state.behavior === 'resting')) ? 1 : 1 - Math.exp(-dt * 8); model.initial = false;
         fly.position.x += (targetX - fly.position.x) * ease; fly.position.z += (targetZ - fly.position.z) * ease; fly.position.y += (targetY - fly.position.y) * ease;
         const targetYaw = Math.PI / 2 - (Number.isFinite(state.heading) ? state.heading : 0);
         const delta = Math.atan2(Math.sin(targetYaw - fly.rotation.y), Math.cos(targetYaw - fly.rotation.y)); fly.rotation.y += delta * ease;
@@ -412,6 +455,8 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
         head.rotation.x = state.behavior === 'feeding' ? .17 + (running && !reducedMotion ? Math.sin(phase * 3) * .04 : 0) : 0;
         shadow.position.set(fly.position.x, .022, fly.position.z); shadow.scale.setScalar(1 + altitude * .4); shadow.material.opacity = .3 - altitude * .18;
         marker.position.set(fly.position.x, .026, fly.position.z); marker.visible = index === 0;
+        model.noteLabel.visible=tombolaMode;
+        if(tombolaMode){const pitches=music.layout?.pitches||[],names=music.layout?.noteNames||[],pitch=pitches.length?pitches[index%pitches.length]:60,noteText=names.length?names[index%names.length]:['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'][pitch%12]+(Math.floor(pitch/12)-1);if(noteText!==model.noteText){const replacement=labelSprite(noteText,index===0?'#edffcc':'#bedbc8');model.noteLabel.material.map.dispose();model.noteLabel.material.dispose();model.noteLabel.material=replacement.material;model.noteText=noteText;}model.noteLabel.position.set(fly.position.x,fly.position.y+.83,fly.position.z);}
         legs.forEach(l => {
           const signal = clamp(a[l.index]), oscillation = running && !reducedMotion ? Math.sin(phase + l.index * Math.PI * .73) * signal : 0;
           l.k.copy(l.knee); l.k.y += Math.max(0, oscillation) * .09;
@@ -428,12 +473,12 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
           w.pivot.rotation.z = w.side * (.045 + beat); w.pivot.rotation.y = w.side * (flying ? -.2 : -.4);
         });
       });
-      const mode = music.instrumentMode === 'strings' ? 'strings' : music.instrumentMode === 'ambient' ? 'ambient' : 'fruit';
-      stringStage.visible = mode === 'strings'; gardenStage.visible = mode !== 'strings';
+      stringStage.visible = mode === 'strings'; gardenStage.visible = mode === 'ambient'||mode==='fruit';tombolaStage.visible=tombolaMode;table.visible=!tombolaMode;
       beginContacts(music, mode);
-      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode !== 'strings', now);
+      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode !== 'strings'&&!tombolaMode, now);
       if (mode === 'strings') updateStrings(music, now);
       updateContacts(music, now, mode);
+      updateChamber(brain.tombola||{},mode,now,running,dt);
       view.render();
     },
     dispose() {

@@ -136,3 +136,17 @@ test('the two-minute limit finalizes one recording and clears its active state',
   f.advance(120_000);
   assert.equal(f.downloads.length, 1);
 });
+
+test('a Tombola take records its current physics and scale without ambient or fruit-note claims', async context => {
+  const f = fixture(context), recorder = f.create({
+    getState: () => ({ mode: 'live', running: true, brain: { flyCount: 12, tombola: { speed: -1.25, bounce: .8, gravity: .15 } }, music: { instrumentMode: 'tombola', scale: 'minor', noteCount: 17, tempo: 96 } }),
+    video: { srcObject: {}, readyState: 2, videoWidth: 1200, videoHeight: 800 },
+  });
+  recorder.start();
+  assert.ok(f.labels.includes('FLY TOMBOLA'));
+  assert.ok(f.labels.some(label => label.includes('12 FLIES · THE CHAMBER')));
+  assert.ok(f.labels.some(label => label.includes('C MINOR') && label.includes('SPIN -1.25') && label.includes('BOUNCE 80%') && label.includes('GRAVITY 15%')));
+  assert.ok(f.labels.some(label => label.includes('TOY PHYSICS') && label.includes('EXTERNAL SPIN / GRAVITY')));
+  assert.ok(!f.labels.some(label => /AUTHORED|BANANA C4|SIX STRINGS/.test(label)));
+  recorder.stop(); await Promise.resolve();
+});

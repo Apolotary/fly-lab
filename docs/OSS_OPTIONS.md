@@ -24,7 +24,9 @@ The exact packaged demo targets NVIDIA machines: the [brain renderer](https://gi
 Ableton Fly combines [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly)'s
 JavaScript locomotor simulator and MaleCNS extract with
 [Three.js](https://github.com/mrdoob/three.js). An original miniature world supplies
-fruit locations and modeled behavior. The default **Ambient** mode lets twelve
+fruit locations and modeled behavior. The default **Fly Tombola** mode adds an
+original rotating hexagonal particle enclosure: each fly carries a note and wall
+impacts play it. **Ambient** lets twelve
 independent simulations influence an authored musical bed. Feeding visits add
 accents. **Fruit pads** and **Strings** preserve the contact-only instruments.
 Notes reach Live through Apple's CoreMIDI framework; no physical fruit controller
@@ -35,7 +37,8 @@ or additional MIDI driver is required.
 | Measured wiring | 1,045 selected neurons, 17,224 directed connections and 708,689 synaptic contacts. MIT simulator code; the particular MaleCNS extract is CC BY 4.0. |
 | Animal world | The standard launchers start twelve independent instances of the same measured motor graph, with shared fruit and different seeded inputs. Original rules supply exploration, equal fruit attraction, hunger, feeding, rest and flight height. Actual simulated motor output gates translation and turning. |
 | Visible body and instrument | Original articulated Three.js flies, fruit, wires, MIDI box and guitar geometry illustrate the simulation and its contacts. There are no electrical, foot-force or aerodynamic dynamics. |
-| Ambient (default) | An authored Cmaj9 → Am9 → Fmaj9 → G6/9 bed changes chord every eight beats in Lively/Wild or sixteen in Calm, with soft attacks every four beats. Lively/Wild add upper ripples every beat/half-beat. Collective movement affects note choice, density, brightness, space and pan. Feeding visits add higher-register accents. |
+| Fly Tombola (default) | Original fixed-step particle physics in a rotating hexagon. Motor output nudges steering; launch momentum, gravity and moving-wall impulses are external forces. A wall impact plays the fly's scale note; no collisions means no notes. |
+| Ambient | An authored Cmaj9 → Am9 → Fmaj9 → G6/9 bed changes chord every eight beats in Lively/Wild or sixteen in Calm, with soft attacks every four beats. Lively/Wild add upper ripples every beat/half-beat. Collective movement affects note choice, density, brightness, space and pan. Feeding visits add higher-register accents. |
 | Fruit pads | A new feeding visit triggers the fruit's pitch: banana C4/60, apple E4/64, grape G4/67. Holding contact stays silent; leaving and revisiting can retrigger. |
 | Strings | Six strings have fixed pitches. Low-height crossings and landings trigger notes through a geometric body proxy; contact speed affects velocity. |
 | Live instrument | An original Swift bridge sends channel-1 MIDI through one port to one owned Fly Instrument track. Ambient uses one original locally generated sample in Simpler plus native Reverb. Warm tones and brighter upper-register accents share that instrument. Fruit pads and Strings use a local factory acoustic-guitar sample. |

@@ -20,7 +20,13 @@ upstream notice is in `src/vendor/desktop-fly/LICENSE`.
 
 Ableton Fly's original wrapper supplies artificial descending-neuron stimulation
 from a seeded, modeled environment. Simulated motor rates gate movement and
-turning. Ambient mode maps collective movement to performance controls over an
+turning in the garden. Fly Tombola reuses these circuits for motor-driven steering
+inside an original rotating enclosure. Initial launch energy, inertia, gravity
+and moving-wall forces are authored toy physics and can move a silent circuit's
+particle. Each fly carries an assigned note, played on a wall impact. This mode
+takes conceptual inspiration from [Tombola](https://teenage.engineering/guides/op-1);
+no Teenage Engineering artwork, sounds or code are included.
+Ambient mode maps collective movement to performance controls over an
 authored musical foundation, with accents from feeding visits. Fruit pads uses
 feeding-contact rules, and Strings uses geometric string-contact tests to generate
 MIDI notes. The standard launchers start twelve flies, each with independent state

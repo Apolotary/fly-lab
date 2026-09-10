@@ -87,6 +87,21 @@ test('instrument setup creates one owned sample instrument and clip at 96 BPM', 
   assert.ok(!JSON.stringify(f.adapter.snapshot()).includes('/local/'));
 });
 
+test('Fly Tombola uses the contact sound and keeps the same track across mode changes', async () => {
+  const f = fixture();
+  await f.adapter.prepare({ mode: 'tombola' });
+  const track = f.created[0];
+  assert.equal(track.devices[0].samplePath, '/local/instrument.wav');
+  assert.equal(track.clips[0].name, 'Ableton Fly · fly tombola');
+  await f.adapter.setMode('ambient');
+  assert.equal(track.devices[0].samplePath, '/local/ambient.wav');
+  await f.adapter.setMode('tombola');
+  assert.equal(track.devices[0].samplePath, '/local/instrument.wav');
+  assert.equal(track.clips[0].name, 'Ableton Fly · fly tombola');
+  assert.equal(f.created.length, 1);
+  assert.equal(track.arm, false);
+});
+
 test('instrument setup resumes failed sample loading and clip creation without duplicates', async () => {
   for (const failure of ['sampleOnce', 'clipOnce']) {
     const f = fixture();

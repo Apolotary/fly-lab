@@ -7,7 +7,8 @@ freely. Visitors’ presence also changed the birds’ behavior.
 [Primary exhibition description](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/).
 
 Our independent digital adaptation now starts with twelve simulated flies in a
-shared fruit habitat. **Ambient**, the default, gives them an authored musical
+shared fruit habitat. **Fly Tombola**, the default, assigns a note to each fly in a
+rotating chamber; wall collisions trigger the notes. **Ambient** gives them an authored musical
 foundation to influence through their collective movement and fruit visits.
 **Fruit pads** makes a new feeding visit audible, while **Strings** retains six
 virtual strings that play when a fly crosses or lands on one near the surface.
@@ -21,6 +22,14 @@ Its physical device uses wired conductive objects, including fruit, and human
 contact completing an electrical circuit to generate MIDI. Ableton Fly uses
 virtual feeding events instead. Its drawn wires and MIDI box explain the mapping;
 they do not simulate conductivity or require Playtron hardware.
+
+The new Fly Tombola mode takes inspiration from Teenage Engineering's
+[OP–1 field sequencer](https://teenage.engineering/guides/op-1). The official guide
+lists rotation speed, heaviness, shape and bounciness. Our fixed hexagonal chamber
+is an original implementation with motor-driven steering, fruit attraction and
+note-carrying flies. It uses no Teenage Engineering artwork, sounds or source code.
+Initial launch velocities, gravity and moving-wall forces are external toy physics;
+they can move a particle without neural activity. No wall collision means no note.
 
 ## Documented precedents
 
@@ -51,6 +60,7 @@ twelve independent copies of one measured motor circuit
         ↓ simulated motor activity gates movement
 virtual movement + feeding behavior
         ↓ chosen musical mode
+Fly Tombola: toy physics + motor steering → wall impacts → each fly's note
 Ambient: collective movement + fruit visits → authored bed + modulation
 Fruit pads / Strings: feeding visit OR low string contact → MIDI notes
         ↓

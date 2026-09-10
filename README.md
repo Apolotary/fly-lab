@@ -1,9 +1,16 @@
 # ableton-fly
 
-**An ambient garden performed by twelve simulated flies.**
+**A fly-powered physics sequencer for Ableton.**
 
-Twelve simulated fruit flies walk, fly, seek fruit and feed in a small habitat.
-In the default **Ambient** mode, their collective movement changes the brightness,
+The default **Fly Tombola** puts twelve simulated flies into a rotating hexagonal
+chamber. Each fly carries a note; a wall collision plays that note, and stronger
+impacts play louder. Adjust **Spin**, **Bounce**, **Gravity**, and **Scale** during
+playback. Fruit attracts the flies and changes their routes. This is an original
+interpretation of [Tombola in the OP–1 field](https://teenage.engineering/guides/op-1),
+using cute flies and the existing motor-circuit model.
+
+**Ambient** remains available as a quieter garden performance. In that mode,
+their collective movement changes the brightness,
 density, space and pan of a musical bed in Ableton. Fruit visits add bell-like
 accents. **Lively** is the default: faster body movement, five-second chord changes
 and rippling high notes shaped by the crowd. Switch **Calm / Lively / Wild** while
@@ -49,8 +56,8 @@ Extensions-compatible Ableton Live Suite beta, and your own
 4. In Live’s **Tempo & MIDI** settings, enable **Track** for **Ableton Fly** if it
    is not already enabled. Close Settings afterward so the beta can continue.
 5. Click **Prepare instrument**. This creates one **Fly Instrument** MIDI track,
-   loads an original locally generated ambient sound into Simpler, adds Live's
-   native Reverb, and creates **Ableton Fly · ambient garden** in Arrangement.
+   loads a local acoustic-guitar sample into Simpler, and creates
+   **Ableton Fly · fly tombola** in Arrangement.
 6. Keep Live’s transport **stopped**, then click **Let flies explore**.
 
 Choose Banana, Apple or Grape, then click the habitat to place fruit. Up to six
@@ -58,11 +65,11 @@ pieces share the space. **Clear** removes the fruit. The flies continue explorin
 The performance plays Live's MIDI input immediately on channel 1. The instrument is
 armed for monitoring; the extension does not start the transport or global recording.
 
-**Ambient** is selected by default. Pause to switch between **Ambient**,
-**Fruit pads** and **Strings**. Switching keeps the recorded notes and establishes a fresh contact
+**Fly Tombola** is selected by default. Pause to switch between **Fly Tombola**,
+**Ambient**, **Fruit pads** and **Strings**. Switching keeps the recorded notes and establishes a fresh contact
 baseline: a fly already feeding does not make a new note simply because the mode
 changed. Ambient uses the original synthesized sample and swarm-controlled
-effects; Fruit pads and Strings use a local factory acoustic-guitar sample.
+effects; Fly Tombola, Fruit pads and Strings use a local factory acoustic-guitar sample.
 
 **Pause** releases notes and disarms the track. Press **Play in Live from bar 1**
 to replay its recorded clip. Stop the transport before resuming the flies.
@@ -74,7 +81,7 @@ The clip stores notes; MIDI export also includes tempo. Continuous filter, pan a
 changes are performed live; replay uses the current instrument settings. Capture
 the shared audio/video to keep the performance as heard.
 
-To hear a piano instead, select Fruit pads or Strings, pause, and replace the
+To hear a piano instead, select Fly Tombola, Fruit pads or Strings, pause, and replace the
 Fly Instrument track's instrument in Live with a piano preset. Contact MIDI can
 play that preset. Keep that mode for the take; restarting in a new empty Set
 rebuilds the default setup. Ambient's controls require the original Simpler.
@@ -106,6 +113,21 @@ If the sharing prompt does not open, bring Chrome forward and click again.
 window sharing. Keep the browser visible while recording.
 
 ## What changes the music?
+
+**Fly Tombola** makes physical collisions audible:
+
+- Each fly carries a pitch from C pentatonic, C minor or C major across several octaves.
+- A new wall impact plays that pitch. Harder hits increase velocity and note length.
+- Spin turns the six-sided chamber in either direction; zero stops its rotation.
+- Bounce controls rebound energy. Gravity pulls toward one side of the chamber.
+- The measured motor circuit nudges self-propulsion and steering. Fruit attraction,
+  inertia, gravity, initial launch velocities and moving-wall forces are authored rules.
+- No wall hit means no Tombola note. There is no hidden arpeggio or backing track.
+
+These are particles dressed as flies in a musical toy, not a validated model of
+fly flight. External gravity, wall motion and launch energy can keep a fly moving
+even when its neural output is silent. The neural clock is unchanged. Scale and
+physics controls preserve recorded notes; pause before switching modes.
 
 **Ambient** combines an authored musical foundation with the swarm's activity:
 
@@ -166,7 +188,8 @@ The default twelve flies use the same measured wiring with different seeded
 inputs: twelve independent simulations of one anatomical subset. The anatomy
 counts describe each copy, not twelve separately measured animals. Simulated motor
 activity gates movement and turning. Disabling the measured synapses stops motion
-and contact-generated music in tests; the authored Ambient foundation is separate.
+and garden contact-generated music in tests. Tombola has external physics forces,
+and the authored Ambient foundation is separate.
 
 Fruit sensing, shared food, hunger, walking/flight intervals and steering are
 engineered behavioral rules. All fruit kinds are equally attractive. There is no
@@ -194,7 +217,7 @@ See [the artistic inspiration](docs/INSPIRATION.md),
 
 Suggested caption:
 
-> I wrote an ambient track and let twelve simulated flies perform it.
+> I made a Tombola sequencer, but the notes are flies.
 
 ## Development and preview
 

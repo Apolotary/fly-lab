@@ -123,10 +123,10 @@ export class LiveInstrumentAdapter {
     this.controlParameters = ambient ? { brightness, space: wet, pan: record.track.mixer.panning } : {};
     if (!ambient) await this.setAmount(record.track.mixer.panning, .5);
     this.instrumentMode = mode;
-    record.clip.name = ambient ? 'Ableton Fly · ambient garden' : 'Ableton Fly · contact notes';
+    record.clip.name = mode === 'tombola' ? 'Ableton Fly · fly tombola' : ambient ? 'Ableton Fly · ambient garden' : 'Ableton Fly · contact notes';
   }
   setMode(mode) {
-    if (!['ambient', 'fruit', 'strings'].includes(mode)) return Promise.reject(new Error('Unknown instrument mode.'));
+    if (!['ambient', 'fruit', 'strings', 'tombola'].includes(mode)) return Promise.reject(new Error('Unknown instrument mode.'));
     return this.enqueue(async () => {
       this.song();
       this.midi?.panic();

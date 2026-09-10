@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { setImmediate } from 'node:timers/promises';
 import { FlyController } from '../src/controller.js';
 import { FlyWorld } from '../src/world.js';
+import { FlyGarden } from '../src/garden.js';
+import { FlyTombola } from '../src/tombola-world.js';
 
 function deferred() {
   let resolve;
@@ -41,6 +43,58 @@ function fixture() {
   return { adapter, world, composer, calls, controller: new FlyController(adapter, { world, composer, mode: 'live' }) };
 }
 function silenceErrors(context) { context.mock.method(console, 'error', () => {}); }
+
+test('Fly Tombola preserves neural identity and notes across live controls and mode changes', async () => {
+  const { adapter } = fixture();
+  const garden = new FlyGarden({ count: 3 });
+  const brains = garden.worlds.map(world => world.brain);
+  const controller = new FlyController(adapter, { world: garden, instrumentMode: 'tombola' });
+  assert.ok(controller.world instanceof FlyTombola);
+  await controller.action({ action: 'start' });
+  const start = controller.lastTick;
+  for (let i = 1; i <= 80; i++) {
+    controller.tick(start + i * 50);
+    await controller.pending;
+  }
+  const notes = controller.composer.notes;
+  assert.ok(notes.length > 0, 'wall hits reach the instrument');
+  const recorded = structuredClone(notes), time = controller.performanceTime;
+  await controller.action({ action: 'tombola', speed: -1.2, bounce: .9, gravity: .4 });
+  await controller.action({ action: 'scale', scale: 'minor' });
+  assert.equal(controller.running, true);
+  assert.equal(controller.snapshot().brain.tombola.speed, -1.2);
+  assert.equal(controller.snapshot().music.scale, 'minor');
+  assert.deepEqual(notes, recorded);
+  await assert.rejects(controller.action({ action: 'tombola', speed: 1, bounce: 2 }));
+  assert.equal(controller.snapshot().brain.tombola.speed, -1.2, 'invalid edits are atomic');
+  await assert.rejects(controller.action({ action: 'scale', scale: '__proto__' }));
+  await assert.rejects(controller.action({ action: 'mode', mode: 'ambient' }), /Pause/);
+  await controller.action({ action: 'stop' });
+  await controller.action({ action: 'mode', mode: 'ambient' });
+  assert.equal(controller.world, garden);
+  await controller.action({ action: 'mode', mode: 'tombola' });
+  assert.equal(controller.performanceTime, time);
+  assert.equal(controller.composer.notes, notes);
+  assert.equal(controller.snapshot().brain.tombola.totalHits, 0);
+  assert.equal(controller.snapshot().brain.tombola.speed, -1.2);
+  assert.equal(controller.snapshot().music.scale, 'minor');
+  assert.deepEqual(garden.worlds.map(world => world.brain), brains);
+  assert.deepEqual(notes, recorded);
+});
+
+test('failed Fly Tombola instrument switch leaves the active garden and recording intact', async context => {
+  silenceErrors(context);
+  const { adapter } = fixture();
+  const garden = new FlyGarden({ count: 1 });
+  const controller = new FlyController(adapter, { world: garden, instrumentMode: 'fruit' });
+  const original = garden.snapshot(), notes = controller.composer.notes;
+  adapter.setMode = async () => { throw new Error('private SDK failure'); };
+  await assert.rejects(controller.action({ action: 'mode', mode: 'tombola' }), /Instrument change failed/);
+  assert.equal(controller.world, garden);
+  assert.equal(controller.instrumentMode, 'fruit');
+  assert.equal(controller.composer.notes, notes);
+  assert.deepEqual(garden.snapshot(), original);
+});
 
 test('timer delays advance elapsed simulation time while capping catch-up work', async () => {
   const { controller, world } = fixture();

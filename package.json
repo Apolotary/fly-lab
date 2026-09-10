@@ -1,9 +1,9 @@
 {
   "name": "ableton-fly",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
-  "description": "A simulated fly garden performs an ambient Ableton piece through movement and fruit visits.",
+  "description": "A fly-powered physics sequencer and ambient garden for Ableton.",
   "license": "MIT",
   "engines": {
     "node": ">=24.16.0"
