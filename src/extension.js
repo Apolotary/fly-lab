@@ -23,7 +23,7 @@ export async function activate(activation) {
       darkCheckpoint,saveLearning:data=>saveDarkCheckpoint(checkpointPath,data) });
   midi.onError = error => { controller.pending = controller.fail(error); };
   try { app = await startServer(controller, html); } catch (error) { await midi.close(); throw error; }
-  console.log(`Ableton Fly connected: ${app.url}`);
+  console.log(`Fly Lab connected: ${app.url}`);
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
     shutdown().then(() => process.exit(0), () => process.exit(1));
   });

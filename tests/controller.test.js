@@ -16,7 +16,7 @@ function fixture() {
   const adapter = {
     prepared: true,
     midi: { panic() { calls.push('midi:panic'); } },
-    snapshot() { return { tempo: 96, source: 'Fly Instrument', midiConnected: true }; },
+    snapshot() { return { tempo: 96, source: 'Fly Lab', midiConnected: true }; },
     async prepare() { calls.push('prepare'); },
     async start() { calls.push('start'); },
     play(notes) { calls.push(['play', structuredClone(notes)]); },

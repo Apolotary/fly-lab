@@ -1,5 +1,9 @@
 # Third-party notices
 
+Fly Lab's original code is MIT licensed, copyright 2026 Apolotary; see [LICENSE](LICENSE).
+The components and data below retain their own licenses and attribution. The
+project's MIT license does not relicense third-party works.
+
 ## Three.js
 
 The local 3D renderer uses [Three.js](https://threejs.org/), version 0.186.0,
@@ -18,7 +22,7 @@ from [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly), commit
 Copyright (c) 2026 Denis Shiryaev. Licensed under the MIT License; the full
 upstream notice is in `src/vendor/desktop-fly/LICENSE`.
 
-Ableton Fly's original wrapper supplies artificial descending-neuron stimulation
+Fly Lab's original wrapper supplies artificial descending-neuron stimulation
 from a seeded, modeled environment. Simulated motor rates gate movement and
 turning in the garden. Fly Tombola reuses these circuits for motor-driven steering
 inside an original rotating enclosure. Initial launch energy, inertia, gravity
@@ -126,8 +130,10 @@ are excluded from Git. No SDK source or documentation is redistributed here.
 Fly Tombola, Fruit pads and Strings load an acoustic-guitar sample from the user's installed
 Ableton factory content into Simpler. The sample remains local and is not copied
 into this repository, bundled, uploaded or distributed with MIDI exports. Ableton
-software and factory content retain their respective license terms. This project
-is independent of Ableton.
+software and factory content retain their respective license terms.
+
+Ableton and Ableton Live are trademarks of Ableton AG. Fly Lab is an independent
+project and is not affiliated with, sponsored by, or endorsed by Ableton AG.
 
 ## Artistic references
 

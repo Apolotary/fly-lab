@@ -1,6 +1,6 @@
-# ableton-fly
+# Fly Lab
 
-**A simulated fly, a little musical learning, and Ableton.**
+**Fly-powered music experiments for Ableton Live.**
 
 The default **Dark lab** connects one simulated fly motor circuit to a small
 trainable musical readout. It chooses among ten authored gestures: low drones,
@@ -68,11 +68,11 @@ Extensions-compatible Ableton Live Suite beta, and your own
    switching Sets and finish any save dialog. Preparation sets this Set to 96 BPM.
 3. Double-click **Start Fly.command** and keep its terminal open. The launcher
    opens Chrome when installed, with your default browser as a fallback.
-4. In Live’s **Tempo & MIDI** settings, enable **Track** for **Ableton Fly** if it
+4. In Live’s **Tempo & MIDI** settings, enable **Track** for **Fly Lab** if it
    is not already enabled. Close Settings afterward so the beta can continue.
-5. Click **Prepare instrument**. This creates one **Fly Instrument** MIDI track,
+5. Click **Prepare instrument**. This creates one **Fly Lab** MIDI track,
    loads an original locally generated dark drone into Simpler with native
-   Reverb, and creates **Ableton Fly · dark lab** in Arrangement.
+   Reverb, and creates **Fly Lab · dark lab** in Arrangement.
 6. Keep Live’s transport **stopped**, then click **Let flies explore**.
 
 Dark lab makes a musical choice every two seconds and scores each sixteen-second
@@ -96,7 +96,7 @@ changes, pause and a normal shutdown in a local checkpoint.
 
 **Pause** releases notes and disarms the track. Press **Play in Live from bar 1**
 to replay its recorded clip. Stop the transport before resuming the flies.
-**Save MIDI** exports `ableton-fly.mid`, including its timing and tempo.
+**Save MIDI** exports `fly-lab.mid`, including its timing and tempo.
 **Panic** or Escape releases notes and mutes the owned track; Start unmutes it.
 Closing the dashboard pauses the flies after ten seconds.
 
@@ -105,7 +105,7 @@ changes are performed live; replay uses the current instrument settings. Capture
 the shared audio/video to keep the performance as heard.
 
 To hear a piano instead, select Fly Tombola, Fruit pads or Strings, pause, and replace the
-Fly Instrument track's instrument in Live with a piano preset. Contact MIDI can
+Fly Lab track's instrument in Live with a piano preset. Contact MIDI can
 play that preset. Keep that mode for the take; restarting in a new empty Set
 rebuilds the default setup. Dark lab and Ambient's controls require the original Simpler.
 
@@ -302,6 +302,12 @@ audio stays out of Git. The guitar sample is read from your installed Live facto
 content and is never redistributed. The native bridge uses Apple's installed
 CoreMIDI framework and a single MIDI port; no additional MIDI driver is required.
 
-Original code is MIT licensed; the measured MaleCNS extract is CC BY 4.0.
+Original Fly Lab code is [MIT licensed](LICENSE), copyright 2026 Apolotary.
+Third-party works retain their own licenses: the measured MaleCNS extract is
+CC BY 4.0, and the vendored DesktopFly code and Three.js are MIT licensed under
+their authors' notices. This project's MIT license does not relicense those works.
 Attribution is retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 Ableton’s SDK and factory sounds must be supplied locally under their own terms.
+
+Ableton and Ableton Live are trademarks of Ableton AG. Fly Lab is an independent
+project and is not affiliated with, sponsored by, or endorsed by Ableton AG.

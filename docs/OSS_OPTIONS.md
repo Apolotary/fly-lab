@@ -1,4 +1,4 @@
-# Open-source parts for Ableton Fly
+# Open-source parts for Fly Lab
 
 Checked against upstream source on 10 September 2026.
 
@@ -21,7 +21,7 @@ The exact packaged demo targets NVIDIA machines: the [brain renderer](https://gi
 
 ## The lightweight choice here
 
-Ableton Fly combines [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly)'s
+Fly Lab combines [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly)'s
 JavaScript locomotor simulator and MaleCNS extract with
 [Three.js](https://github.com/mrdoob/three.js). An original miniature world supplies
 fruit locations and modeled behavior. The default **Dark lab** mode advances one
@@ -44,7 +44,7 @@ or additional MIDI driver is required.
 | Ambient | An authored Cmaj9 → Am9 → Fmaj9 → G6/9 bed changes chord every eight beats in Lively/Wild or sixteen in Calm, with soft attacks every four beats. Lively/Wild add upper ripples every beat/half-beat. Collective movement affects note choice, density, brightness, space and pan. Feeding visits add higher-register accents. |
 | Fruit pads | A new feeding visit triggers the fruit's pitch: banana C4/60, apple E4/64, grape G4/67. Holding contact stays silent; leaving and revisiting can retrigger. |
 | Strings | Six strings have fixed pitches. Low-height crossings and landings trigger notes through a geometric body proxy; contact speed affects velocity. |
-| Live instrument | An original Swift bridge sends channel-1 MIDI through one port to one owned Fly Instrument track. Ambient and Dark lab use different original locally generated samples in Simpler plus native Reverb. Fly Tombola, Fruit pads and Strings use a local factory acoustic-guitar sample. |
+| Live instrument | An original Swift bridge sends channel-1 MIDI through one Fly Lab port to one owned Fly Lab track. Ambient and Dark lab use different original locally generated samples in Simpler plus native Reverb. Fly Tombola, Fruit pads and Strings use a local factory acoustic-guitar sample. |
 | Reusable performance | Notes accumulate in an arrangement clip at 96 BPM; standard MIDI export also includes tempo. Live filter, pan and Reverb changes are not stored in that clip or MIDI file. Shared audio/video capture preserves those performed changes. The browser preview uses original synthesis. |
 
 This setup runs without a Python physics environment or GPU training job. It is

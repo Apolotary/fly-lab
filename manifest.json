@@ -1,7 +1,7 @@
 {
-  "name": "ableton-fly",
+  "name": "fly-lab",
   "author": "Apolotary",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "entry": "dist/extension.cjs",
   "minimumApiVersion": "1.0.0"
 }

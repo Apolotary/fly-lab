@@ -13,7 +13,7 @@ function fixture() {
       this.value = next;
       calls.push(['parameter', name, next]);
     } });
-  const unrelated = { name: 'Fly Instrument', arm: true, mute: false };
+  const unrelated = { name: 'Fly Lab', arm: true, mute: false };
   let tempo = 120;
   const song = {
     get tracks() { throw new Error('Do not inspect unrelated tracks.'); },
@@ -70,7 +70,7 @@ test('instrument setup creates one owned sample instrument and clip at 96 BPM', 
   await Promise.all([f.adapter.prepare(), f.adapter.prepare()]);
   assert.equal(f.created.length, 1);
   const track = f.created[0];
-  assert.equal(track.name, 'Fly Instrument');
+  assert.equal(track.name, 'Fly Lab');
   assert.equal(track.arm, false);
   assert.equal(track.mute, false);
   assert.equal(track.mixer.volume.value, .62);
@@ -83,7 +83,7 @@ test('instrument setup creates one owned sample instrument and clip at 96 BPM', 
   assert.equal(f.song.tempo, TEMPO);
   assert.equal(f.adapter.prepared, true);
   assert.equal(f.adapter.snapshot().muted, false);
-  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
+  assert.deepEqual(f.unrelated, { name: 'Fly Lab', arm: true, mute: false });
   assert.ok(!JSON.stringify(f.adapter.snapshot()).includes('/local/'));
 });
 
@@ -92,12 +92,12 @@ test('Fly Tombola uses the contact sound and keeps the same track across mode ch
   await f.adapter.prepare({ mode: 'tombola' });
   const track = f.created[0];
   assert.equal(track.devices[0].samplePath, '/local/instrument.wav');
-  assert.equal(track.clips[0].name, 'Ableton Fly · fly tombola');
+  assert.equal(track.clips[0].name, 'Fly Lab · fly tombola');
   await f.adapter.setMode('ambient');
   assert.equal(track.devices[0].samplePath, '/local/ambient.wav');
   await f.adapter.setMode('tombola');
   assert.equal(track.devices[0].samplePath, '/local/instrument.wav');
-  assert.equal(track.clips[0].name, 'Ableton Fly · fly tombola');
+  assert.equal(track.clips[0].name, 'Fly Lab · fly tombola');
   assert.equal(f.created.length, 1);
   assert.equal(track.arm, false);
 });
@@ -261,11 +261,11 @@ test('dark lab loads its own sound with normalized dark effects on one owned tra
   assert.equal(value(reverb, 'Dry/Wet'), .55);
   assert.equal(value(reverb, 'Decay Time'), .7);
   assert.equal(track.mixer.volume.value, .67);
-  assert.equal(track.clips[0].name, 'Ableton Fly · dark lab');
+  assert.equal(track.clips[0].name, 'Fly Lab · dark lab');
   assert.equal(track.arm, false);
   assert.equal(f.adapter.instrumentMode, 'dark');
   assert.deepEqual(f.adapter.snapshot().liveControls, { brightness: true, space: true, pan: true });
-  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
+  assert.deepEqual(f.unrelated, { name: 'Fly Lab', arm: true, mute: false });
 });
 
 test('switching between dark, ambient and contact sounds reloads the correct source without replacing a recording', async () => {
@@ -293,7 +293,7 @@ test('switching between dark, ambient and contact sounds reloads the correct sou
   assert.deepEqual(track.clips, [clip]);
   await f.adapter.setMode('dark');
   assert.equal(simpler.loads, expected.length + 1, 'selecting the same source avoids a sample reload');
-  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
+  assert.deepEqual(f.unrelated, { name: 'Fly Lab', arm: true, mute: false });
 });
 
 test('dark modulation is bounded, changes the readout controls and validates all inputs before writes', async () => {
@@ -344,7 +344,7 @@ test('mode changes reuse the owned track and recording while restoring contact i
   assert.deepEqual(f.adapter.snapshot().liveControls, { brightness: false, space: false, pan: false });
   await f.adapter.setMode('fruit');
   assert.equal(simpler.loads, 3, 'two contact modes share the same sample');
-  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
+  assert.deepEqual(f.unrelated, { name: 'Fly Lab', arm: true, mute: false });
 });
 
 test('ambient effects clamp normalized inputs and SDK bounds and reject nonfinite controls before any writes', async () => {

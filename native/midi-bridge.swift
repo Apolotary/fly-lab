@@ -49,7 +49,7 @@ final class PacketRecorder: @unchecked Sendable {
 }
 
 final class MidiBridge: @unchecked Sendable {
-    let queue = DispatchQueue(label: "AbletonFly.MIDI")
+    let queue = DispatchQueue(label: "FlyLab.MIDI")
     private var client = MIDIClientRef()
     private var source = MIDIEndpointRef()
     private var testPort = MIDIPortRef()
@@ -63,7 +63,7 @@ final class MidiBridge: @unchecked Sendable {
     init(testing: Bool) { self.testing = testing }
 
     func open() -> Bool {
-        let name = testing ? "Ableton Fly Test" : "Ableton Fly"
+        let name = testing ? "Fly Lab Test" : "Fly Lab"
         let clientStatus = MIDIClientCreate(name as CFString, nil, nil, &client)
         guard clientStatus == noErr else {
             report(["type": "error", "message": "MIDI service is unavailable", "code": clientStatus])
@@ -91,7 +91,7 @@ final class MidiBridge: @unchecked Sendable {
             // Stable ID helps Live retain its routing when the bridge is restarted.
             // A collision is harmless: CoreMIDI keeps its automatically assigned ID.
             MIDIObjectSetIntegerProperty(source, kMIDIPropertyUniqueID, 0x41464C59)
-            MIDIObjectSetStringProperty(source, kMIDIPropertyManufacturer, "Ableton Fly" as CFString)
+            MIDIObjectSetStringProperty(source, kMIDIPropertyManufacturer, "Fly Lab" as CFString)
         }
         for number in [SIGINT, SIGTERM, SIGHUP] {
             signal(number, SIG_IGN)

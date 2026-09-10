@@ -115,7 +115,7 @@ test('recording downloads contain the emitted media and use the supported contai
     const f = fixture(child, { format }), recorder = f.create();
     recorder.start(); recorder.stop();
     await Promise.resolve();
-    assert.match(f.downloads[0].filename, new RegExp(`^ableton-fly-.*\\.${extension}$`));
+    assert.match(f.downloads[0].filename, new RegExp(`^fly-lab-.*\\.${extension}$`));
     assert.equal(f.downloads[0].href, 'blob:recording-1');
     assert.ok(f.blobs[0].type.startsWith(format));
     assert.equal(await f.blobs[0].text(), 'captured media');
@@ -160,6 +160,9 @@ test('a Dark lab take exposes learned-readout scores without claiming biological
     video: { srcObject: {}, readyState: 2, videoWidth: 1200, videoHeight: 800 },
   });
   recorder.start();
+  assert.ok(f.labels.includes('FLY LAB'));
+  assert.ok(f.labels.includes('for Ableton Live'));
+  assert.ok(f.labels.some(label => label.includes('Independent project') && label.includes('not affiliated')));
   assert.ok(f.labels.includes('DARK LAB · ONE FLY'));
   assert.ok(f.labels.some(label => label.includes('1 FLY · NIGHT GARDEN')));
   assert.ok(f.labels.some(label => label.includes('PHRASE SCORE 72%') && label.includes('4 UPDATES') && label.includes('WEIGHT MOVEMENT 0.125')));

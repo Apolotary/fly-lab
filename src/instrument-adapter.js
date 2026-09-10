@@ -26,7 +26,7 @@ export class LiveInstrumentAdapter {
     this.record = null;
     this.tail = Promise.resolve();
   }
-  snapshot() { return { tempo: TEMPO, source: 'Fly Instrument', midiConnected: Boolean(this.midi?.connected), muted: this.muted,
+  snapshot() { return { tempo: TEMPO, source: 'Fly Lab', midiConnected: Boolean(this.midi?.connected), muted: this.muted,
     liveControls: { brightness: Boolean(this.controlParameters.brightness), space: Boolean(this.controlParameters.space), pan: Boolean(this.controlParameters.pan) } }; }
   enqueue(operation) {
     const next = this.tail.then(operation);
@@ -51,7 +51,7 @@ export class LiveInstrumentAdapter {
         if (!this.record) this.record = { track: await song.createMidiTrack(), device: null, rawDevice: null, sampleReady: false, clip: null };
         const record = this.record;
         song.tempo = TEMPO;
-        record.track.name = 'Fly Instrument';
+        record.track.name = 'Fly Lab';
         record.track.arm = false;
         record.track.mute = true;
         await record.track.mixer.volume.setValue(parameterValue(record.track.mixer.volume, NEUTRAL_LEVEL));
@@ -60,7 +60,7 @@ export class LiveInstrumentAdapter {
         record.track.arm = false;
         if (!record.sampleReady) { await record.device.replaceSample(this.sampleForMode(mode)); record.sampleReady = true; }
         if (!record.clip) record.clip = await record.track.createMidiClip(0, MAX_BEATS);
-        record.clip.name = 'Ableton Fly · contact notes';
+        record.clip.name = 'Fly Lab · contact notes';
         await this.configureMode(mode, true);
         record.track.arm = false;
         record.track.mute = false;
@@ -127,7 +127,7 @@ export class LiveInstrumentAdapter {
     this.controlParameters = ambient ? { brightness, space: wet, pan: record.track.mixer.panning } : {};
     if (!ambient) await this.setAmount(record.track.mixer.panning, .5);
     this.instrumentMode = mode;
-    record.clip.name = dark ? 'Ableton Fly · dark lab' : mode === 'tombola' ? 'Ableton Fly · fly tombola' : ambient ? 'Ableton Fly · ambient garden' : 'Ableton Fly · contact notes';
+    record.clip.name = dark ? 'Fly Lab · dark lab' : mode === 'tombola' ? 'Fly Lab · fly tombola' : ambient ? 'Fly Lab · ambient garden' : 'Fly Lab · contact notes';
   }
   setMode(mode) {
     if (!['ambient', 'dark', 'fruit', 'strings', 'tombola'].includes(mode)) return Promise.reject(new Error('Unknown instrument mode.'));

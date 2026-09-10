@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { buildDark } from '../scripts/build-dark.mjs';
 
 test('authored dark sound is deterministic PCM with headroom, smooth edges and a C4 foundation', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'ableton-fly-dark-'));
+  const root = await mkdtemp(join(tmpdir(), 'fly-lab-dark-'));
   try {
     const path = await buildDark(root), wav = await readFile(path);
     await buildDark(root);

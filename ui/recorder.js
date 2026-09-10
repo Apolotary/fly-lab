@@ -27,7 +27,7 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
     ctx.fillStyle = darkMode ? '#08060d' : '#050606'; ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
     const text = (value, x, y, size = 13, color = '#91a194') => {ctx.fillStyle = color; ctx.font = `${size}px ui-monospace, Menlo, monospace`; ctx.fillText(value, x, y);};
-    text('ABLETON FLY', 30, 30, 20, '#e2eae1'); text(title, 232, 30, 13, darkMode ? '#d3b5f0' : '#bdf0a8');
+    text('FLY LAB', 30, 25, 20, '#e2eae1'); text('for Ableton Live', 30, 46, 9); text(title, 232, 30, 13, darkMode ? '#d3b5f0' : '#bdf0a8');
     ctx.textAlign = 'right'; text(`${number(music.noteCount)} NOTES  ·  ${number(music.tempo, 96)} BPM`, 1250, 30, 13, '#e2eae1'); ctx.textAlign = 'left';
     ctx.fillStyle = '#26342c'; ctx.fillRect(30, 57, 1220, 1);
     const pane = (x,y,w,h,label) => {ctx.fillStyle = '#090e0b'; ctx.fillRect(x,y,w,h); ctx.strokeStyle = '#29372e'; ctx.strokeRect(x+.5,y+.5,w-1,h-1); text(label,x+12,y+16,11);};
@@ -59,6 +59,7 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
     const soundLabel = audioSource === 'shared' ? 'SHARED AUDIO' : audioSource === 'preview' ? 'BROWSER PREVIEW AUDIO' : 'VIDEO ONLY · NO AUDIO CAPTURED';
     text(`${soundLabel}  ·  ${state.running ? 'FLIES EXPLORING' : 'PAUSED'}  ·  ${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')}`, 30, 691, 10, audioSource === 'none' ? '#e2bf82' : '#91a194');
     ctx.textAlign = 'right'; text(darkMode ? 'MEASURED MOTOR CIRCUIT · AUTHORED PREFERENCES, NOT AUDIO LISTENING' : tombolaMode ? 'TOY PHYSICS · MOTOR STEERING + EXTERNAL SPIN / GRAVITY' : 'MEASURED MOTOR CIRCUITS · MODELED FRUIT SEEKING', 1250, 691, 9); ctx.textAlign = 'left';
+    text('Independent project · not affiliated with or endorsed by Ableton AG · Ableton and Live are trademarks of Ableton AG', 30, 708, 8);
     if (seconds !== lastSecond) {lastSecond = seconds; emit();}
   }
   function stop(reason = '') {
@@ -99,7 +100,7 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
         if (blob?.size) {
           const url = URL.createObjectURL(blob), link = document.createElement('a');
           const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-          link.href = url; link.download = `ableton-fly-${stamp}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`; link.hidden = true;
+          link.href = url; link.download = `fly-lab-${stamp}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`; link.hidden = true;
           document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30_000);
           onChange({...status(), saved: true, message: ending || 'Video saved to your browser’s downloads.'});
         } else {onError('No video frames were recorded. Keep the browser visible and try again.'); emit();}

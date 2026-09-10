@@ -34,7 +34,7 @@ function fixture({ ready = true, quit = true, stubborn = false } = {}) {
   const failures = [];
   const midi = new MidiOutput({
     binaryPath: '/test/bridge', spawnProcess: () => {
-      if (ready) queueMicrotask(() => child.stdout.write('{"type":"ready","name":"Ableton Fly"}\n'));
+      if (ready) queueMicrotask(() => child.stdout.write('{"type":"ready","name":"Fly Lab"}\n'));
       return child;
     },
     onError: (error) => failures.push(error.message), readyTimeoutMs: 20, closeTimeoutMs: 20,
@@ -49,7 +49,7 @@ test('MIDI waits for readiness, emits bounded notes, and closes with quit', asyn
   assert.equal(midi.note({ pitch: 60, velocity: 70, duration: 0.5 }), false);
   // A readiness message may arrive split across pipe reads.
   child.stdout.write('{"type":"rea');
-  child.stdout.write('dy","name":"Ableton Fly"}\n');
+  child.stdout.write('dy","name":"Fly Lab"}\n');
   await opening;
   assert.equal(midi.connected, true);
   assert.equal(midi.note({ pitch: 60, velocity: 70, duration: 0.5 }), true);

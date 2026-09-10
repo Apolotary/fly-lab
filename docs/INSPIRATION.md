@@ -23,7 +23,7 @@ original work’s living animals, acoustic response, scale or recordings.
 
 The fruit mode also takes inspiration from [Playtronica's Playtron](https://help.playtronica.com/devices/playtron/).
 Its physical device uses wired conductive objects, including fruit, and human
-contact completing an electrical circuit to generate MIDI. Ableton Fly uses
+contact completing an electrical circuit to generate MIDI. Fly Lab uses
 virtual feeding events instead. Its drawn wires and MIDI box explain the mapping;
 they do not simulate conductivity or require Playtron hardware.
 
@@ -37,7 +37,7 @@ they can move a particle without neural activity. No wall collision means no not
 
 ## Documented precedents
 
-| Project | What the source documents | What inspires Ableton Fly |
+| Project | What the source documents | What inspires Fly Lab |
 | --- | --- | --- |
 | Céleste Boursier-Mougenot, *from here to ear* | Zebra finches move freely through an installation and perch on amplified electric guitars. | Ordinary animal behavior becomes musical material because of how the environment is arranged. |
 | Playtronica, *Playtron* | Wired conductive objects become MIDI controls through touch. | Give each fruit a note and make the sound's cause visible. |

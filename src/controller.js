@@ -92,7 +92,7 @@ export class FlyController {
       try { await this.pending; await this.adapter.setMode?.(input.mode); }
       catch (error) {
         this.error = 'Instrument change failed. Prepare the instrument again before playing.';
-        console.error('Ableton Fly instrument change failed:', error);
+        console.error('Fly Lab instrument change failed:', error);
         throw new Error(this.error);
       }
       finally { this.busy = false; finishMode(); }
@@ -194,7 +194,7 @@ export class FlyController {
       this.adapter.midi?.panic();
       this.error = !this.adapter.prepared ? 'Prepare the instrument first. Check the local terminal if setup failed.' : 'Live action failed. Check the local terminal and reconnect if the Set changed.';
       if (this.mode === 'demo' || this.composer.complete) this.error = error.message;
-      console.error('Ableton Fly action failed:', error);
+      console.error('Fly Lab action failed:', error);
       throw new Error(this.error);
     } finally { this.busy = false; actionFinished(); }
     return this.snapshot();
@@ -203,7 +203,7 @@ export class FlyController {
     this.running = false;
     this.error = 'Instrument connection lost. Reconnect the extension before continuing.';
     this.addEvent(this.error);
-    console.error('Ableton Fly performance failed:', error);
+    console.error('Fly Lab performance failed:', error);
     return this.adapter.panic().catch(() => {});
   }
   tick(now = Date.now()) {

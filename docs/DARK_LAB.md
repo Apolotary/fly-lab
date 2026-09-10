@@ -150,10 +150,10 @@ not recomputed after every later preference click or phrase.
 The source is an original deterministic C4/MIDI-60 waveform with slowly beating
 partials and quiet filtered noise. It is generated locally into
 `.local/audio/dark-lab.wav` and played through one Simpler and native Reverb on
-the owned **Fly Instrument** track. Low notes, soft envelopes, dark filtering and
+the owned **Fly Lab** track. Low notes, soft envelopes, dark filtering and
 long space are part of the authored instrument. It uses no copied recordings.
 
-MIDI accumulates in **Ableton Fly · dark lab** at the existing 96 BPM timeline.
+MIDI accumulates in **Fly Lab · dark lab** at the existing 96 BPM timeline.
 The clip and MIDI export retain notes. Continuous filter, pan and Reverb changes
 are performed live and are not saved as clip automation. Use shared audio/video
 capture to keep the sound as performed; see [the recording instructions](../README.md#make-the-split-screen-video).

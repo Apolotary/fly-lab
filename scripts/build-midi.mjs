@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 export async function buildMidi(root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')) {
   if (process.platform !== 'darwin') throw new Error('The MIDI bridge requires macOS.');
   const source = path.join(root, 'native', 'midi-bridge.swift');
-  const binary = path.join(root, '.local', 'bin', 'ableton-fly-midi');
+  const binary = path.join(root, '.local', 'bin', 'fly-lab-midi');
   const cache = path.join(root, '.local', 'swift-module-cache');
   const [input, output] = await Promise.all([stat(source), stat(binary).catch(() => null)]);
   if (output?.isFile() && output.mtimeMs >= input.mtimeMs) return binary;
@@ -23,7 +23,7 @@ export async function buildMidi(root = path.resolve(path.dirname(fileURLToPath(i
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  buildMidi().then(() => console.log('Ableton Fly MIDI bridge is ready.')).catch((error) => {
+  buildMidi().then(() => console.log('Fly Lab MIDI bridge is ready.')).catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
   });
