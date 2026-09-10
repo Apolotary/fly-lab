@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#141611">
+  <title>Ableton Fly — tiny brain, big set</title>
+  <style>
+    :root{color-scheme:dark;--bg:#141611;--panel:#1b1e18;--line:#34392c;--ink:#f0f0df;--muted:#969c89;--acid:#d8f353;--orange:#f99d62;--red:#ffa291;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.38;cursor:not-allowed}button:focus-visible,input:focus-visible{outline:2px solid var(--acid);outline-offset:4px}button{transition:background .16s,opacity .16s}button:hover:not(:disabled){filter:brightness(1.1)}.app{max-width:1640px;margin:auto;padding:25px 32px 18px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:23px}.wordmark{display:flex;gap:15px;align-items:center;font-weight:850;font-size:32px;letter-spacing:-1.7px;line-height:1}.wordmark svg{width:36px;height:29px;color:var(--acid)}.wordmark small{font:10px var(--mono);letter-spacing:1px;color:var(--muted);margin-left:4px;padding-top:7px}.header-right{display:flex;gap:21px;align-items:center}.status{font:10px var(--mono);letter-spacing:1.1px;display:flex;gap:8px;align-items:center;white-space:nowrap}.status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}.status.good .status-dot{background:var(--acid);box-shadow:0 0 11px #d8f34050}.status.bad .status-dot{background:var(--red)}.capture-toggle{display:flex;gap:7px;align-items:center;cursor:pointer;font:10px var(--mono);color:var(--muted);white-space:nowrap}.capture-toggle input{accent-color:var(--acid);margin:0;width:13px;height:13px}.intro{display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin-bottom:18px}.intro h1{font-size:clamp(22px,2.35vw,36px);font-weight:500;letter-spacing:-1.3px;margin:0}.intro h1 span{color:var(--muted)}.eyebrow{font:10px var(--mono);color:var(--muted);letter-spacing:1.8px;text-transform:uppercase}.demo-notice{display:none;background:#d8f35314;border:1px solid #d8f35338;padding:10px 14px;font:11px var(--mono);color:var(--acid);margin-bottom:12px;line-height:1.5}.demo-notice.show{display:block}.error{display:none;background:#ffa29116;border:1px solid #ffa29148;padding:10px 14px;font:12px var(--mono);color:var(--red);margin-bottom:12px;line-height:1.5}.error.show{display:block}.layout{display:grid;grid-template-columns:minmax(0,1.54fr) minmax(310px,1fr);gap:15px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;overflow:hidden}.panel-head{height:44px;padding:0 17px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:8px}.panel-title{font:10px var(--mono);letter-spacing:1.7px}.tag{font:9px var(--mono);letter-spacing:.9px;color:var(--muted);display:flex;align-items:center;gap:6px}.live-dot{display:inline-block;width:5px;height:5px;background:var(--muted);border-radius:50%}.is-running .live-dot{background:var(--acid);box-shadow:0 0 10px #d8f35380}.arena{height:clamp(215px,calc(100vh - 580px),395px);position:relative;background:#181b15;overflow:hidden}.arena canvas{display:block;width:100%;height:100%}.arena-label{position:absolute;top:18px;left:19px;color:var(--muted);font:10px var(--mono);line-height:1.7;pointer-events:none}.arena-label b{display:block;color:var(--ink);font-weight:400;font-size:11px}.arena-bottom{position:absolute;bottom:18px;left:19px;right:19px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}.coordinate{font:10px var(--mono);line-height:1.6;color:var(--muted)}.phase{font:9px var(--mono);letter-spacing:1.5px;color:var(--acid);padding:6px 8px;border:1px solid #d8f3533c;background:#151810a6}.arena-bottom .caption{font:10px var(--mono);color:var(--muted);text-align:right}.voice-strip{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);min-height:71px}.voice{padding:12px 14px;border-right:1px solid var(--line);min-width:0}.voice:last-child{border:0}.voice-title{font:9px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px}.voice-level{height:3px;background:#34392c;position:relative}.voice-level i{display:block;height:100%;width:0;background:var(--acid);transition:width .22s}.voice-meta{display:flex;justify-content:space-between;margin-top:6px;font:8px var(--mono);color:#828975}.brain-content{display:flex;flex-direction:column;height:calc(clamp(215px,calc(100vh - 580px),395px) + 71px)}.brain-visual{flex:1;position:relative;min-height:105px;overflow:hidden}.brain-visual canvas{display:block;width:100%;height:100%}.brain-stats{position:absolute;left:17px;top:16px;pointer-events:none}.neuron-number{font-size:30px;font-weight:450;letter-spacing:-1.5px;line-height:1}.brain-stats .eyebrow{margin-top:5px;letter-spacing:1px;font-size:9px}.brain-subset{position:absolute;right:13px;bottom:12px;color:var(--muted);font:8px var(--mono);letter-spacing:.3px}.neural-metrics{display:flex;justify-content:space-between;gap:12px;padding:11px 17px;border-top:1px solid var(--line);font:9px var(--mono);color:var(--muted)}.neural-metrics strong{color:var(--ink);font-weight:400}.leg-signals{padding:12px 17px 13px;border-top:1px solid var(--line)}.leg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font:9px var(--mono);color:var(--muted)}.leg-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.leg{font:8px var(--mono);color:var(--muted)}.leg-track{height:30px;background:#292e23;position:relative;overflow:hidden;border-radius:1px;margin-bottom:6px}.leg-track i{position:absolute;bottom:0;left:0;right:0;height:0;background:var(--acid);transition:height .2s}.leg:nth-child(n+4) .leg-track i{background:#afb9f0}.controls{display:grid;grid-template-columns:1.54fr 1fr;gap:15px;margin-top:15px}.transport{padding:15px 17px}.steps{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:12px;margin-bottom:14px}.step{font:9px var(--mono);color:var(--muted);display:flex;gap:7px;align-items:center}.step-num{border:1px solid #4b513f;border-radius:50%;width:18px;height:18px;display:grid;place-items:center;flex-shrink:0;color:var(--ink)}.step.done .step-num{background:var(--acid);border-color:var(--acid);color:#171a11}.button-row{display:grid;grid-template-columns:1fr 1.27fr .74fr;gap:8px}.btn{border:1px solid #565f45;border-radius:2px;background:#292e22;color:var(--ink);height:40px;font-size:11px;font-weight:600;padding:0 10px;white-space:nowrap}.btn.primary{background:var(--acid);border-color:var(--acid);color:#222713}.btn.freeze{background:transparent;color:var(--ink)}.btn svg{width:10px;height:10px;vertical-align:-1px;margin-right:6px}.transport-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}.transport-note{font:9px var(--mono);color:var(--muted);line-height:1.5}.panic{background:none;border:none;color:var(--red);padding:2px 0;font:9px var(--mono);white-space:nowrap}.panic kbd{border:1px solid #72574d;border-radius:2px;font:8px var(--mono);padding:1px 3px;margin-left:4px;opacity:.7}.stimuli{padding:15px 17px;display:flex;flex-direction:column;justify-content:center;gap:18px}.slider-row{display:grid;grid-template-columns:52px 1fr 31px;gap:13px;align-items:center}.slider-row label{font:10px var(--mono);letter-spacing:.2px}.slider-row output{color:var(--acid);font:10px var(--mono);text-align:right}.slider-row input{width:100%;margin:0;accent-color:var(--acid);cursor:pointer;height:14px}.slider-legend{display:flex;justify-content:space-between;font:8px var(--mono);color:var(--muted);margin-top:3px}.slider-wrapper{min-width:0}.log-panel{margin-top:15px;display:flex;min-height:39px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);align-items:center;gap:17px;padding:10px 1px}.log-label{white-space:nowrap;color:var(--muted);font:9px var(--mono);letter-spacing:1px}.event-feed{display:flex;gap:24px;overflow:hidden;white-space:nowrap;min-width:0;font:10px var(--mono);color:#c0c6b0}.event-item{flex-shrink:0}.event-item time{color:#758165;margin-right:9px}.footer{display:flex;justify-content:space-between;gap:15px;margin-top:13px;font:9px var(--mono);line-height:1.5;color:#828975}.footer .tagline{color:#aeb49f}.recording .tutorial{display:none}.recording .transport{display:flex;flex-direction:column;justify-content:center}.recording .intro{margin-bottom:19px}.recording .arena{height:clamp(255px,calc(100vh - 540px),450px)}.recording .brain-content{height:calc(clamp(255px,calc(100vh - 540px),450px) + 71px)}.recording .app{padding-top:25px}.recording .footer{margin-top:12px}
+    @media(min-width:1300px){.app{padding:30px 42px 23px}.topbar{margin-bottom:28px}.transport,.stimuli{padding:19px 20px}.steps{margin-bottom:17px}.button-row .btn{height:44px}.brain-stats{top:21px;left:21px}.neuron-number{font-size:36px}.voice{padding:13px 18px}.leg-signals{padding:15px 19px}.leg-track{height:38px}.leg-head{margin-bottom:14px}}
+    @media(max-height:780px) and (min-width:850px){.app{padding-top:18px}.topbar{margin-bottom:16px}.intro{margin-bottom:14px}.arena{height:190px}.brain-content{height:261px}.recording .arena{height:225px}.recording .brain-content{height:296px}.recording .app{padding-top:18px}.controls{margin-top:12px}.log-panel{margin-top:12px}.demo-notice{padding:7px 12px}.wordmark{font-size:29px}}
+    @media(max-width:1050px){.app{padding-left:22px;padding-right:22px}.wordmark small{display:none}.header-right{gap:14px}.layout,.controls{grid-template-columns:minmax(0,1.35fr) minmax(290px,1fr)}.step{font-size:8px;gap:5px}.steps{gap:6px}.transport-note{font-size:8px}.transport-foot{gap:7px}.btn{padding:0 6px;font-size:10px}.panic{font-size:8px}.voice{padding-left:10px;padding-right:10px}.voice-title{font-size:8px}.intro .eyebrow{font-size:9px}}
+    @media(max-width:800px){.app{padding:20px 16px}.topbar{align-items:flex-start;gap:12px;margin-bottom:23px}.wordmark{font-size:27px;gap:10px}.wordmark svg{width:28px;height:24px}.header-right{align-items:flex-end;flex-direction:column;gap:10px}.status{font-size:8px}.capture-toggle{font-size:9px}.intro{display:block}.intro h1{font-size:26px}.intro>.eyebrow{margin-top:10px}.layout{grid-template-columns:1fr}.arena{height:310px}.brain-content{height:270px}.brain-visual{min-height:130px}.brain-stats .neuron-number{font-size:27px}.leg-track{height:23px}.controls{grid-template-columns:1fr}.steps{font-size:10px}.step{font-size:9px}.btn{font-size:11px}.transport-note{font-size:9px}.panic{font-size:9px}.stimuli{gap:16px}.footer{flex-direction:column;gap:5px}.recording .arena{height:350px}.recording .brain-content{height:270px}.log-panel{gap:12px}.brain-subset{font-size:8px}.voice-strip{min-height:66px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <div class="wordmark"><svg viewBox="0 0 42 32" fill="none" aria-hidden="true"><path d="M4 4v24M10 4v24M16 4v24M24 5h15M24 12h15M24 19h15M24 26h15" stroke="currentColor" stroke-width="3"/></svg>ABLETON FLY<small>EXPERIMENT / 001</small></div>
+    <div class="header-right"><div class="status" id="connection"><span class="status-dot"></span><span id="connection-label">CONNECTING</span></div><label class="capture-toggle"><input id="recording" type="checkbox"> Recording view</label></div>
+  </header>
+  <section class="intro"><h1>1,045 neurons. <span>Zero music theory.</span></h1><span class="eyebrow">A tiny resident DJ</span></section>
+  <div id="demo-notice" class="demo-notice" role="status">DEMO MODE · Visual simulation only. Ableton Live is not being controlled.</div>
+  <div id="error" class="error" role="alert"></div>
+  <div class="layout">
+    <section class="panel" aria-label="Fly arena">
+      <div class="panel-head"><span class="panel-title">01 / THE PERFORMER</span><span class="tag"><i class="live-dot"></i><span id="fly-status">AWAITING SIGNAL</span></span></div>
+      <div class="arena"><canvas id="arena" aria-label="A chunky 3D fly performing on a miniature DJ mixer"></canvas><div class="arena-label"><b>DROSOPHILA MELANOGASTER</b>Six motor signals → six voices<br><span style="font-size:8px;opacity:.75">CHARACTER &amp; MOVEMENT ARE ILLUSTRATIVE</span></div><div class="arena-bottom"><div class="coordinate" id="coordinates">X 0.500 / Y 0.500<br>HEADING 000°</div><div class="caption"><div class="phase" id="phase">IN THE GREEN ROOM</div></div></div></div>
+      <div class="voice-strip" id="voices" aria-label="Fly instrument activity"></div>
+    </section>
+    <section class="panel" aria-label="Neural activity">
+      <div class="panel-head"><span class="panel-title">02 / INSIDE THE CIRCUIT</span><span class="tag" id="spikes">0 SPIKES</span></div>
+      <div class="brain-content"><div class="brain-visual"><canvas id="brain-canvas" aria-label="Illustrative neural activity portrait"></canvas><div class="brain-stats"><div class="neuron-number" id="neurons">1,045</div><div class="eyebrow">MODELED NEURONS</div></div><div class="brain-subset">ACTIVITY PORTRAIT · ILLUSTRATIVE LAYOUT</div></div><div class="neural-metrics"><span><strong id="edges">—</strong> connections</span><span><strong id="tempo">—</strong> BPM</span><span>T+ <strong id="elapsed">0.0s</strong></span></div><div class="leg-signals"><div class="leg-head"><span>6 LEGS / 6 MOTOR SIGNALS</span><span>LEFT <span style="color:#afb9f0">/ RIGHT</span></span></div><div class="leg-grid" id="legs"></div></div></div>
+    </section>
+  </div>
+  <div class="controls">
+    <section class="panel transport" aria-label="Performance controls">
+      <div class="steps tutorial"><div class="step" id="step-prepare"><span class="step-num">1</span>Build demo</div><div class="step"><span class="step-num">2</span><span>Press Play in Live<br><span style="font-size:8px;line-height:1.7">Arrangement (Tab) · bar 1</span></span></div><div class="step" id="step-start"><span class="step-num">3</span>Release the fly</div></div>
+      <div class="button-row"><button id="prepare" class="btn" disabled>Build demo</button><button id="start" class="btn primary" disabled><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 0l8 5-8 5z" fill="currentColor"/></svg><span>Release the fly</span></button><button id="stop" class="btn freeze" disabled><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0h3v10H1zM6 0h3v10H6z" fill="currentColor"/></svg>Freeze</button></div>
+      <div class="transport-foot"><span class="transport-note">Freeze restores tempo. Live transport stays yours.</span><button id="panic" class="panic" disabled>Mute fly tracks <kbd>esc</kbd></button></div>
+    </section>
+    <section class="panel stimuli" aria-label="Neural stimuli">
+      <div class="slider-row"><label for="drive">DRIVE</label><div class="slider-wrapper"><input id="drive" type="range" min="0" max="1" step="0.01" value="0.55" disabled><div class="slider-legend"><span>sleepy</span><span>espresso</span></div></div><output for="drive" id="drive-value">55%</output></div>
+      <div class="slider-row"><label for="turn">TURN</label><div class="slider-wrapper"><input id="turn" type="range" min="-1" max="1" step="0.01" value="0" disabled><div class="slider-legend"><span>← left</span><span>right →</span></div></div><output for="turn" id="turn-value">0</output></div>
+    </section>
+  </div>
+  <div class="log-panel"><span class="log-label">FLY LOG ↗</span><div class="event-feed" id="events" aria-label="Recent fly events"><span class="event-item">Waiting for the local extension…</span></div></div>
+  <footer class="footer"><span class="tagline">Measured wiring · modeled dynamics · human-made musical mapping</span><span>NO CLOUD. JUST A FLY WITH AUX.</span></footer>
+</main>
+<script>__FLY_SCENE_SCRIPT__</script>
+<script>
+(() => {
+  'use strict';
+  const TOKEN = '__FLY_TOKEN__';
+  const $ = id => document.getElementById(id);
+  const number = (v, fallback=0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
+  const clamp = (v,min=0,max=1) => Math.max(min,Math.min(max,number(v)));
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let state = null, reachable = false, posting = false, localError = '', connectionError = '', lastEventKey = '', stimulusTimer, sliderEditing = false;
+  let trail = [], lastTrailTime = null, lastFrame = 0;
+  const defaultVoices = ['Fly Kick','Fly Bass','Fly Pulse','Fly Hats','Fly Chord','Fly Spark'];
+  for (let i=0;i<6;i++) {
+    const voice=document.createElement('div');voice.className='voice';
+    const title=document.createElement('div');title.className='voice-title';title.textContent=defaultVoices[i];
+    const level=document.createElement('div');level.className='voice-level';level.append(document.createElement('i'));
+    const meta=document.createElement('div');meta.className='voice-meta';const status=document.createElement('span');status.textContent='STANDBY';const pan=document.createElement('span');pan.textContent='C';meta.append(status,pan);voice.append(title,level,meta);$('voices').append(voice);
+  }
+  ['LF','LM','LH','RF','RM','RH'].forEach(label=>{const leg=document.createElement('div');leg.className='leg';const track=document.createElement('div');track.className='leg-track';track.append(document.createElement('i'));const text=document.createElement('span');text.textContent=label;leg.append(track,text);$('legs').append(leg)});
+  const voiceElements=[...$('voices').children],legElements=[...$('legs').children];
+  function render() {
+    const brain=state?.brain||{},music=state?.music||{},busy=posting||Boolean(state?.busy),isLive=state?.mode==='live',running=Boolean(state?.running),prepared=Boolean(state?.prepared);
+    const connected=reachable&&Boolean(state?.connection);
+    document.body.classList.toggle('is-running',running&&reachable);
+    $('connection').className='status '+(connected?'good':reachable?'':'bad');
+    $('connection-label').textContent=!reachable?'EXTENSION OFFLINE':isLive?(connected?'LIVE CONNECTED':'LIVE DISCONNECTED'):'VISUAL DEMO';
+    $('demo-notice').classList.toggle('show',Boolean(state)&&!isLive);
+    $('error').textContent=connectionError||localError||state?.error||'';$('error').classList.toggle('show',Boolean($('error').textContent));
+    $('prepare').disabled=!reachable||busy||running||prepared;
+    $('prepare').textContent=busy?'Working…':prepared?'Demo ready':'Build demo';
+    $('start').disabled=!reachable||busy||!prepared||running||!connected;
+    $('start').querySelector('span').textContent=running?'The fly has the aux':'Release the fly';
+    $('stop').disabled=!reachable||busy||!running;
+    $('panic').disabled=!reachable||busy||!prepared;
+    $('drive').disabled=!reachable||busy;$('turn').disabled=!reachable||busy;
+    $('step-prepare').classList.toggle('done',prepared);$('step-start').classList.toggle('done',running);
+    $('fly-status').textContent=!reachable?'SIGNAL LOST':running?'ON THE DECKS':prepared?'READY TO GO':'IN THE GREEN ROOM';
+    $('phase').textContent=!reachable?'WAITING FOR CONNECTION':running?(isLive?'FLY IS CONTROLLING LIVE':'VISUAL SIMULATION'):prepared?'READY WHEN YOU ARE':'IN THE GREEN ROOM';
+    $('neurons').textContent=Math.round(number(brain.neurons,1045)).toLocaleString();
+    $('edges').textContent=brain.edges==null?'—':Math.round(number(brain.edges)).toLocaleString();
+    $('spikes').textContent=Math.round(number(brain.spikes)).toLocaleString()+' SPIKES';
+    $('tempo').textContent=music.tempo==null?'—':number(music.tempo).toFixed(1);
+    $('elapsed').textContent=number(brain.time).toFixed(1)+'s';
+    const heading=((number(brain.heading)*180/Math.PI)%360+360)%360;
+    $('coordinates').replaceChildren(document.createTextNode('X '+clamp(brain.x??.5).toFixed(3)+' / Y '+clamp(brain.y??.5).toFixed(3)),document.createElement('br'),document.createTextNode('HEADING '+Math.round(heading).toString().padStart(3,'0')+'°'));
+    legElements.forEach((el,i)=>{const value=clamp(brain.activity?.[i]);el.firstChild.firstChild.style.height=(value*100)+'%';el.title=Math.round(value*100)+'% motor activity'});
+    voiceElements.forEach((el,i)=>{const voice=music.voices?.[i];el.children[0].textContent=voice?.name||defaultVoices[i];el.children[1].firstChild.style.width=(voice?.active?clamp(voice.level??.7)*100:0)+'%';el.children[2].firstChild.textContent=voice?.active?'ACTIVE':'STANDBY';const pan=clamp(voice?.pan??0,-1,1);el.children[2].lastChild.textContent=Math.abs(pan)<.04?'C':(pan<0?'L ':'R ')+Math.round(Math.abs(pan)*100)});
+    if (!sliderEditing) {$('drive').value=clamp(brain.drive??.55);$('turn').value=clamp(brain.turn??0,-1,1);updateSliderLabels()}
+    const events=Array.isArray(state?.events)?state.events:[];const key=JSON.stringify(events.slice(0,4));
+    if(key!==lastEventKey&&events.length){lastEventKey=key;$('events').replaceChildren();events.slice(0,4).forEach(event=>{const el=document.createElement('span');el.className='event-item';const t=document.createElement('time');t.textContent=formatTime(event.time);el.append(t,document.createTextNode(String(event.text||'')));$('events').append(el)})}
+    if(brain.time!==lastTrailTime&&running){lastTrailTime=brain.time;const p={x:clamp(brain.x??.5),y:clamp(brain.y??.5)};const prev=trail[trail.length-1];if(prev&&Math.hypot(p.x-prev.x,p.y-prev.y)>.4)trail=[];trail.push(p);if(trail.length>150)trail.shift()}
+  }
+  function formatTime(value){if(typeof value==='number')return value>1e9?new Date(value>1e12?value:value*1000).toLocaleTimeString([],{hour12:false}):'+'+value.toFixed(1)+'s';if(typeof value==='string'){const date=new Date(value);if(!Number.isNaN(date.getTime()))return date.toLocaleTimeString([],{hour12:false});return value.slice(0,16)}return 'NOW'}
+  function updateSliderLabels() {$('drive-value').textContent=Math.round(number($('drive').value)*100)+'%';const turn=Math.round(number($('turn').value)*100);$('turn-value').textContent=turn===0?'0':(turn>0?'+':'')+turn}
+  async function request(action,extra={}) {
+    if(posting||state?.busy)return false;
+    posting=true;localError='';render();
+    try {const response=await fetch('/api/action',{method:'POST',headers:{'Content-Type':'application/json','X-Fly-Token':TOKEN},body:JSON.stringify({action,...extra}),signal:AbortSignal.timeout(60000)});let result={};try{result=await response.json()}catch{}if(!response.ok||result.ok===false||result.error)throw new Error(result.error||'Action failed ('+response.status+').');if(result.brain)state=result;else if(result.state)state=result.state;await pollOnce();return true}
+    catch(error){localError=error.name==='TimeoutError'?'The extension took too long to respond. Check Live and try again.':error.message||'Could not reach the extension.';return false}
+    finally{posting=false;render()}
+  }
+  async function pollOnce(){try{const response=await fetch('/api/state',{headers:{'X-Fly-Token':TOKEN},cache:'no-store',signal:AbortSignal.timeout(3000)});if(!response.ok)throw new Error('State request failed ('+response.status+').');const next=await response.json();if(!next||typeof next!=='object'||!next.brain)throw new Error('The extension returned an invalid state.');state=next;reachable=true;connectionError=''}catch(error){reachable=false;connectionError='Connection lost. Keep the local launcher running, then reload this page.'}render()}
+  async function poll(){await pollOnce();window.setTimeout(poll,250)}
+  $('prepare').addEventListener('click',()=>request('prepare'));
+  $('start').addEventListener('click',()=>request('start'));
+  $('stop').addEventListener('click',()=>request('stop'));
+  $('panic').addEventListener('click',()=>request('panic'));
+  window.addEventListener('keydown',event=>{if(event.key==='Escape'&&reachable&&state?.prepared&&!posting&&!state?.busy){event.preventDefault();request('panic')}});
+  $('recording').addEventListener('change',event=>{document.body.classList.toggle('recording',event.target.checked);try{localStorage.setItem('ableton-fly-recording',String(event.target.checked))}catch{}});
+  try{if(localStorage.getItem('ableton-fly-recording')==='true'){$('recording').checked=true;document.body.classList.add('recording')}}catch{}
+  for(const id of ['drive','turn']){$(id).addEventListener('input',()=>{sliderEditing=true;updateSliderLabels();clearTimeout(stimulusTimer);stimulusTimer=setTimeout(async()=>{const values={drive:number($('drive').value),turn:number($('turn').value)};await request('stimulus',values);sliderEditing=false;render()},180)})}
+  function surface(canvas){const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==Math.round(rect.width*dpr)||canvas.height!==Math.round(rect.height*dpr)){canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr)}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,rect.width,rect.height);return {ctx,w:rect.width,h:rect.height}}
+  function drawFly(ctx,x,y,heading,activity,running,t){ctx.save();ctx.translate(x,y);ctx.rotate(heading+Math.PI/2);const size=.91;ctx.scale(size,size);ctx.shadowColor='#0008';ctx.shadowBlur=10;ctx.fillStyle='#0d100b';ctx.beginPath();ctx.ellipse(0,8,15,25,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    for(let side=-1;side<=1;side+=2){for(let leg=0;leg<3;leg++){const v=clamp(activity[(side===-1?0:3)+leg]??0);const wave=running&&!reducedMotion?Math.sin(t*10+leg*2.2+(side===1?Math.PI:0))*(.4+v)*5:0;const sy=-11+leg*12,ex=side*(29+(leg===1?5:0)),ey=sy+(leg-1)*13+wave;ctx.strokeStyle='#d6e0b4';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(side*6,sy);ctx.lineTo(side*19,sy+(leg-1)*6+wave);ctx.lineTo(ex,ey);ctx.lineTo(ex+side*6,ey+5);ctx.stroke();ctx.fillStyle='#d8f353';ctx.beginPath();ctx.arc(ex+side*6,ey+5,1.3,0,Math.PI*2);ctx.fill()}}
+    ctx.fillStyle='#c6d88f20';ctx.strokeStyle='#c6d88f80';ctx.lineWidth=1;for(const side of [-1,1]){ctx.save();ctx.translate(side*5,-7);ctx.rotate(-side*.27);ctx.beginPath();ctx.ellipse(side*5,13,8,23,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.strokeStyle='#c6d88f40';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*6,31);ctx.stroke();ctx.restore()}
+    ctx.fillStyle='#3b4528';ctx.strokeStyle='#d8f353';ctx.lineWidth=1.3;ctx.beginPath();ctx.ellipse(0,10,7.5,14,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.strokeStyle='#788750';ctx.lineWidth=1;for(let i=3;i<19;i+=5){ctx.beginPath();ctx.moveTo(-6,i);ctx.quadraticCurveTo(0,i+3,6,i);ctx.stroke()}
+    ctx.fillStyle='#d8f353';ctx.beginPath();ctx.ellipse(0,-8,7,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#747f43';ctx.beginPath();ctx.ellipse(0,-21,7,5.5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f99d62';for(const side of [-1,1]){ctx.beginPath();ctx.ellipse(side*5,-22,3.7,4.5,side*.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#c2cd96';ctx.beginPath();ctx.moveTo(side*2,-26);ctx.lineTo(side*6,-32);ctx.stroke()}ctx.restore()}
+  function drawArena2D(t){const {ctx,w,h}=surface($('arena')),brain=state?.brain||{};ctx.strokeStyle='#303729';ctx.lineWidth=.65;const spacing=34;for(let x=w%spacing/2;x<w;x+=spacing){for(let y=h%spacing/2;y<h;y+=spacing){ctx.beginPath();ctx.moveTo(x-1.4,y);ctx.lineTo(x+1.4,y);ctx.moveTo(x,y-1.4);ctx.lineTo(x,y+1.4);ctx.stroke()}}
+    const inset=28;ctx.strokeStyle='#3d462e';ctx.lineWidth=1;ctx.setLineDash([3,7]);ctx.beginPath();ctx.ellipse(w/2,h/2,w*.36,h*.35,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    const px=v=>inset+v*(w-inset*2),py=v=>inset+v*(h-inset*2);if(trail.length>1){for(let i=1;i<trail.length;i++){ctx.strokeStyle='rgba(216,243,83,'+(.035+.33*i/trail.length)+')';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(px(trail[i-1].x),py(trail[i-1].y));ctx.lineTo(px(trail[i].x),py(trail[i].y));ctx.stroke()}}
+    const x=px(clamp(brain.x??.5)),y=py(clamp(brain.y??.5));ctx.strokeStyle='#d8f35325';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,49,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#d8f35365';for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*46,y+Math.sin(a)*46);ctx.lineTo(x+Math.cos(a)*52,y+Math.sin(a)*52);ctx.stroke()}drawFly(ctx,x,y,number(brain.heading),brain.activity||[],reachable&&state?.running,t)}
+  let flyScene = null;
+  function use2DFallback() {
+    try { flyScene?.dispose?.(); } catch {}
+    flyScene = null;
+    const previous = $('arena'), replacement = previous.cloneNode(false);
+    previous.replaceWith(replacement);
+    replacement.setAttribute('aria-label', 'Two-dimensional fallback fly animation');
+    const label = document.querySelector('.arena-label');
+    const notice = document.createElement('span');
+    notice.textContent = '2D VIEW · WEBGL UNAVAILABLE';
+    notice.style.cssText = 'display:block;font-size:8px;color:#d8f353';
+    label.append(notice);
+  }
+  try {
+    if (typeof window.createFlyScene === 'function') {
+      flyScene = window.createFlyScene($('arena'));
+      $('arena').addEventListener('webglcontextlost', event => { event.preventDefault(); use2DFallback(); }, { once: true });
+    } else use2DFallback();
+  } catch { use2DFallback(); }
+  function drawArena(t) {
+    if (!flyScene) { drawArena2D(t); return; }
+    const rect = $('arena').getBoundingClientRect();
+    try {
+      flyScene.resize(rect.width, rect.height);
+      flyScene.update(state?.brain || {}, Boolean(reachable && state?.running), state?.music || {});
+    } catch { use2DFallback(); drawArena2D(t); }
+  }
+  let seed=7419;function random(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+  const nodes=Array.from({length:64},(_,i)=>{const angle=random()*Math.PI*2,r=Math.sqrt(random()),side=i%2?1:-1;return{x:side*.23+Math.cos(angle)*r*.255,y:Math.sin(angle)*r*.46,r:random(),index:i}});
+  const links=[];nodes.forEach((a,i)=>{nodes.forEach((b,j)=>{if(j<=i)return;const d=Math.hypot(a.x-b.x,a.y-b.y);if(d<.12&&random()<.39)links.push([i,j])})});
+  function drawBrain(t){const{ctx,w,h}=surface($('brain-canvas')),brain=state?.brain||{},activity=brain.activity||[],actual=Array.isArray(brain.nodes)?brain.nodes:[],isRunning=reachable&&state?.running;const offsetX=w*.57,scaleX=Math.min(w*.69,320),scaleY=Math.min(h*.81,235),offsetY=h*.53;const point=n=>({x:offsetX+n.x*scaleX,y:offsetY+n.y*scaleY});const levels=nodes.map((n,i)=>actual.length?clamp(actual[Math.floor(i*actual.length/nodes.length)]):clamp(activity[i%6])*.65);ctx.lineWidth=.65;links.forEach(([i,j])=>{const a=point(nodes[i]),b=point(nodes[j]),level=Math.max(levels[i],levels[j]);ctx.strokeStyle='rgba(170,191,111,'+(.07+level*.24)+')';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()});nodes.forEach((n,i)=>{const p=point(n),level=levels[i],pulse=isRunning&&!reducedMotion?(.87+Math.sin(t*4+n.r*20)*.13):1;ctx.fillStyle=level>.45?'rgba(216,243,83,'+(.5+level*.5)*pulse+')':'rgba(145,164,99,'+(.28+level*.6)+')';if(level>.72){ctx.shadowColor='#d8f353';ctx.shadowBlur=5}ctx.beginPath();ctx.arc(p.x,p.y,level>.65?2.1:1.3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0})}
+  function frame(t){if(t-lastFrame>=(reducedMotion?250:32)){lastFrame=t;drawArena(t/1000);drawBrain(t/1000)}requestAnimationFrame(frame)}
+  render();poll();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

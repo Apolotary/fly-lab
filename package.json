@@ -1,0 +1,25 @@
+{
+  "name": "ableton-fly",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "1,045 fly neurons. Zero music theory. A local Ableton controller.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.16.0"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node scripts/start.mjs",
+    "demo": "node src/demo.js",
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "check:privacy": "node scripts/privacy-check.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  },
+  "dependencies": {
+    "three": "0.186.0"
+  }
+}

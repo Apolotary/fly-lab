@@ -1,0 +1,7 @@
+{
+  "name": "ableton-fly",
+  "author": "Apolotary",
+  "version": "0.1.0",
+  "entry": "dist/extension.cjs",
+  "minimumApiVersion": "1.0.0"
+}
