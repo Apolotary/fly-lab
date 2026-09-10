@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { FlyController } from '../src/controller.js';
-import { GestureComposer } from '../src/gesture-composer.js';
+import { StringComposer } from '../src/string-instrument.js';
 import { startServer } from '../src/server.js';
 
 function request(url, { method = 'GET', path = '/', headers = {}, body } = {}) {
@@ -25,7 +25,7 @@ async function fixture(context) {
   const calls = [];
   const adapter = {
     prepared: true,
-    snapshot: () => ({ tempo: 96, source: 'Fly Piano' }),
+    snapshot: () => ({ tempo: 96, source: 'Fly Strings' }),
     async prepare() { calls.push('prepare'); },
     async start() { calls.push('start'); },
     async recordNotes() { calls.push('record'); },
@@ -34,8 +34,8 @@ async function fixture(context) {
     async close() { calls.push('close'); },
   };
   const world = { snapshot: () => ({ activity: [0, 0, 0, 0, 0, 0] }), setStimulus() {} };
-  const composer = new GestureComposer();
-  composer.notes = [{ id: 1, beat: 0, pitch: 64, velocity: 72, duration: .5, reason: 'Flight' }];
+  const composer = new StringComposer();
+  composer.notes = [{ id: 1, beat: 0, pitch: 64, velocity: 72, duration: .5, reason: 'String crossing' }];
   const controller = new FlyController(adapter, { world, composer, mode: 'live' });
   controller.startTimer = () => {};
   let heartbeats = 0;
@@ -102,7 +102,7 @@ test('MIDI export requires the local token and returns the exact generated binar
   const midi = await download({ 'X-Fly-Token': token });
   assert.equal(midi.status, 200);
   assert.equal(midi.headers['content-type'], 'audio/midi');
-  assert.equal(midi.headers['content-disposition'], 'attachment; filename=fly-field-notes.mid');
+  assert.equal(midi.headers['content-disposition'], 'attachment; filename=from-fruit-to-ear.mid');
   assert.equal(midi.headers['cache-control'], 'no-store');
   assert.deepEqual(midi.bytes, composer.midiFile());
   assert.equal(midi.bytes.toString('ascii', 0, 4), 'MThd');

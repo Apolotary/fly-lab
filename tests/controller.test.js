@@ -14,7 +14,7 @@ function fixture() {
   const adapter = {
     prepared: true,
     midi: { panic() { calls.push('midi:panic'); } },
-    snapshot() { return { tempo: 96, source: 'Fly Piano', midiConnected: true }; },
+    snapshot() { return { tempo: 96, source: 'Fly Instrument', midiConnected: true }; },
     async prepare() { calls.push('prepare'); },
     async start() { calls.push('start'); },
     play(notes) { calls.push(['play', structuredClone(notes)]); },
@@ -100,7 +100,7 @@ test('missing heartbeat releases MIDI before a blocked save and stops exactly on
   assert.equal(calls.filter(call => call === 'stop').length, 1);
 });
 
-test('invalid actions and world inputs never reach the piano adapter', async () => {
+test('invalid actions and world inputs never reach the instrument adapter', async () => {
   const { adapter, calls } = fixture();
   const controller = new FlyController(adapter, { world: new FlyWorld(), mode: 'live' });
   for (const input of [null, [], 'start', { action: 'delete' }, { action: 'eval' }, { action: 'stimulus', drive: NaN },
@@ -114,12 +114,12 @@ test('invalid actions and world inputs never reach the piano adapter', async () 
   assert.deepEqual(calls, []);
 });
 
-test('an unprepared piano start fails safely and hides private setup diagnostics', async context => {
+test('an unprepared instrument start fails safely and hides private setup diagnostics', async context => {
   silenceErrors(context);
   const { controller, adapter, calls } = fixture();
   adapter.prepared = false;
   adapter.start = async () => { throw new Error('private project-name.als payload'); };
-  await assert.rejects(controller.action({ action: 'start' }), /Prepare the piano first/);
+  await assert.rejects(controller.action({ action: 'start' }), /Prepare the instrument first/);
   assert.equal(controller.running, false);
   assert.equal(controller.busy, false);
   assert.deepEqual(calls, ['midi:panic']);
@@ -142,7 +142,7 @@ test('a synchronous MIDI play error stops the fly, panics, and hides source deta
   assert.doesNotMatch(JSON.stringify(controller.snapshot()), /session path|SDK payload/);
 });
 
-test('an asynchronous clip save failure also stops and panics the piano', async context => {
+test('an asynchronous clip save failure also stops and panics the instrument', async context => {
   silenceErrors(context);
   const { controller, adapter, calls } = fixture();
   adapter.recordNotes = async () => { throw new Error('private recording failure'); };

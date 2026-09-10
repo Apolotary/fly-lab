@@ -24,7 +24,7 @@ function surface(canvas, distance = 7, orthographic = false) {
     resize(w, h) {
       if (w < 1 || h < 1 || (w === width && h === height)) return;
       width = w; height = h; renderer.setSize(w, h, false);
-      if (orthographic) { const vertical = Math.max(8.6, 10.8 / (w / h)); camera.left = -vertical * w / h / 2; camera.right = -camera.left; camera.top = vertical / 2; camera.bottom = -camera.top; } else camera.aspect = w / h; camera.updateProjectionMatrix();
+      if (orthographic) { const vertical = Math.max(7.7, 10.2 / (w / h)); camera.left = -vertical * w / h / 2; camera.right = -camera.left; camera.top = vertical / 2; camera.bottom = -camera.top; } else camera.aspect = w / h; camera.updateProjectionMatrix();
     },
     render() { orbit.update(); renderer.render(scene, camera); },
     dispose() {
@@ -116,29 +116,76 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   const direction = new THREE.Vector3();
   function connect(o, a, b) { direction.subVectors(b, a); o.position.copy(a).add(b).multiplyScalar(.5); o.scale.set(o.userData.radius, direction.length(), o.userData.radius); o.quaternion.setFromUnitVectors(UP, direction.normalize()); }
   const stage = new THREE.Group(); scene.add(stage);
-  const soil = material(0x323a27, { roughness: 1 }), rimMaterial = material(0x637258, { roughness: .85 });
-  const tray = mesh(new THREE.CylinderGeometry(4.85, 4.85, .20, 80), black, stage); tray.position.y = -.13;
-  const ground = mesh(new THREE.CircleGeometry(4.68, 80), soil, stage); ground.rotation.x = -Math.PI / 2; ground.position.y = -.02;
-  const border = mesh(new THREE.TorusGeometry(4.73, .055, 6, 100), rimMaterial, stage); border.rotation.x = Math.PI / 2; border.position.y = -.015;
-  // The complete [0,1] square simulation area fits inside this circular tray.
+  // A deliberately broad, original six-string instrument: every sounding
+  // segment occupies the same normalized world coordinates as contact detection.
   const WORLD = 6.6;
   const worldToScene = value => (clamp(value) - .5) * WORLD;
-  for (let i = -3; i <= 3; i++) {
-    line(stage, [[i, -.006, -3.3], [i, -.006, 3.3]], 0x586342, .17);
-    line(stage, [[-3.3, -.006, i], [3.3, -.006, i]], 0x586342, .17);
+  const plinth = material(0x202926), maple = material(0x9b6835), rosewood = material(0x543c29);
+  const table = box(stage, plinth, [0, -.38, 0], [8.0, .25, 7.3]);
+  const bodyShape = new THREE.Shape();
+  bodyShape.moveTo(1.05, -1.50);
+  bodyShape.bezierCurveTo(.1, -2.80, -1.00, -2.32, -1.18, -1.86);
+  bodyShape.bezierCurveTo(-1.8, -2.58, -3.47, -2.65, -3.50, -1.12);
+  bodyShape.bezierCurveTo(-3.80, .15, -3.38, 2.65, -1.91, 2.52);
+  bodyShape.bezierCurveTo(-1.28, 2.47, -1.20, 1.70, -.77, 1.77);
+  bodyShape.bezierCurveTo(-.13, 2.14, .60, 2.25, 1.05, 1.50);
+  bodyShape.closePath();
+  const bodyGeometry = new THREE.ExtrudeGeometry(bodyShape, { depth: .20, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: .065, bevelThickness: .035, curveSegments: 30 });
+  const body = mesh(bodyGeometry, maple, stage); body.rotation.x = -Math.PI / 2; body.position.y = -.23;
+  box(stage, rosewood, [1.56, -.055, 0], [2.55, .11, 2.88]);
+  const headstock = box(stage, maple, [3.05, -.07, 0], [.70, .14, 3.07]); headstock.rotation.y = -.035;
+  for (let i = 0; i < 6; i++) {
+    const x = .49 + i * .33;
+    line(stage, [[x, .004, -1.40], [x, .004, 1.40]], 0x95968a, .68);
   }
-  for (let i = 0; i < 45; i++) {
-    const a = i * 2.39996, r = 4.25 + Math.sin(i * 3.71) * .17;
-    const x = Math.cos(a) * r, z = Math.sin(a) * r;
-    for (let j = 0; j < 3; j++) line(stage, [[x, 0, z], [x + Math.sin(i + j) * .11, .13 + j * .05, z + Math.cos(i + j) * .11]], 0x65784a, .85);
+  for (const z of [-1.22, -.72, -.22, .28, .78, 1.28]) {
+    ellipsoid(stage, pale, [3.30, .04, z], [.12, .07, .085]);
   }
-  const shadow = mesh(new THREE.CircleGeometry(.38, 24), new THREE.MeshBasicMaterial({ color: 0x030502, transparent: true, opacity: .3, depthWrite: false }), stage);
-  shadow.rotation.x = -Math.PI / 2; shadow.position.y = .006;
-  const trailPositions = new Float32Array(90 * 3), trailGeometry = new THREE.BufferGeometry();
-  trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3)); trailGeometry.setDrawRange(0, 0);
-  const trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: 0xa8c48d, transparent: true, opacity: .22 })); stage.add(trail);
-  const trailPoints = [];
-  let lastTrailTime = -1;
+  const soundHole = mesh(new THREE.CircleGeometry(.64, 40), black, stage); soundHole.rotation.x = -Math.PI / 2; soundHole.position.set(-1.22, .014, 0);
+  for (const radius of [.68, .72]) { const ring = mesh(new THREE.TorusGeometry(radius, .016, 4, 50), rosewood, stage); ring.rotation.x = Math.PI / 2; ring.position.set(-1.22, .018, 0); }
+  box(stage, rosewood, [worldToScene(.12), .012, 0], [.16, .045, 2.94]);
+  box(stage, pale, [worldToScene(.88), .012, 0], [.055, .045, 2.83]);
+  // Contact highlights are driven only by composer contact events. Their
+  // illustrated vibration is decorative, not a simulated acoustic waveform.
+  const fallbackStrings = [.30, .38, .46, .54, .62, .70].map((y, i) => ({ id: `string-${i + 1}`, x1: .12, x2: .88, y, pitch: [48, 55, 60, 64, 67, 72][i] }));
+  const stringObjects = new Map(), seenContacts = new Set(), strikeColor = new THREE.Color(0xffedb9);
+  let previousContactCount = null;
+  function createString(spec, index) {
+    const positions = new Float32Array(41 * 3), geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const stringMaterial = new THREE.LineBasicMaterial({color: index < 3 ? 0x51564f : 0x68736f, transparent: true, opacity: .9});
+    const object = new THREE.Line(geometry, stringMaterial); stage.add(object);
+    const halo = mesh(new THREE.RingGeometry(.10, .14, 24), new THREE.MeshBasicMaterial({color: 0xf5d995, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false}), stage);
+    halo.rotation.x = -Math.PI / 2; halo.position.y = .06;
+    return {spec, object, geometry, positions, material: stringMaterial, baseColor: stringMaterial.color.clone(), halo, struck: -100, contactX: .5};
+  }
+  function updateStrings(music, now) {
+    const specs = Array.isArray(music.strings) && music.strings.length ? music.strings : fallbackStrings;
+    const ids = new Set(specs.map(spec => spec.id));
+    for (const [id, item] of stringObjects) if (!ids.has(id)) { stage.remove(item.object, item.halo); item.geometry.dispose(); item.material.dispose(); item.halo.geometry.dispose(); item.halo.material.dispose(); stringObjects.delete(id); }
+    specs.forEach((spec, index) => { if (!stringObjects.has(spec.id)) stringObjects.set(spec.id, createString(spec, index)); stringObjects.get(spec.id).spec = spec; });
+    if (previousContactCount !== null && (music.noteCount ?? 0) < previousContactCount) seenContacts.clear();
+    previousContactCount = music.noteCount ?? 0;
+    for (const contact of Array.isArray(music.contacts) ? music.contacts : []) {
+      const key = contact.id ?? [contact.stringId, contact.flyId, contact.time].join(':');
+      if (seenContacts.has(key)) continue;
+      seenContacts.add(key); if (seenContacts.size > 256) seenContacts.delete(seenContacts.values().next().value);
+      const item = stringObjects.get(contact.stringId);
+      if (item) { item.struck = now; item.contactX = clamp(contact.x ?? .5); }
+    }
+    for (const item of stringObjects.values()) {
+      const {spec, positions} = item, age = now - item.struck, envelope = Math.exp(-age * 5.5), y = Number.isFinite(spec.y) ? spec.y : spec.y1;
+      const x1 = worldToScene(spec.x1), x2 = worldToScene(spec.x2), z = worldToScene(y);
+      for (let i = 0; i <= 40; i++) {
+        const t = i / 40, vibration = reducedMotion ? 0 : Math.sin(t * Math.PI) * Math.sin(age * 68) * .047 * envelope;
+        positions.set([x1 + (x2 - x1) * t, .03, z + vibration], i * 3);
+      }
+      item.geometry.attributes.position.needsUpdate = true;
+      item.material.color.copy(item.baseColor).lerp(strikeColor, Math.min(1, envelope));
+      item.halo.position.x = worldToScene(item.contactX); item.halo.position.z = z;
+      item.halo.material.opacity = envelope * .8; item.halo.scale.setScalar(1 + Math.min(age, 1) * 2.5);
+    }
+  }
   const fruitMaterials = { banana: material(0xe4c45b), apple: material(0xad4030), grape: material(0x69528d), leaf: material(0x71904c), stem: material(0x57402a) };
   const fruitTemplates = new Map();
   for (const kind of ['banana', 'apple', 'grape']) {
@@ -192,7 +239,8 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   function pointerUp(event) { if(down&&Math.hypot(event.clientX-down.x,event.clientY-down.y)<5){const point=pointOnFloor(event);if(point)onPlaceFruit?.(point);}down=null; }
   function pointerLeave() {placement.visible=false;down=null;}
   canvas.addEventListener('pointermove',pointerMove);canvas.addEventListener('pointerdown',pointerDown);canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointerleave',pointerLeave);
-  const fly = new THREE.Group(); scene.add(fly); fly.position.set(0, .02, 0); fly.scale.setScalar(.56);
+  function createFly(primary = false) {
+  const fly = new THREE.Group(); scene.add(fly); fly.position.set(0, 0, 0); fly.scale.setScalar(.43);
   ellipsoid(fly, amber, [0, .85, -.54], [.30, .28, .63]);
   for (let i = 0; i < 5; i++) {
     const z = -.92 + i * .19;
@@ -243,41 +291,53 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     const a = i * 2.39996, x = Math.cos(a) * .23, z = Math.sin(a) * .28;
     line(fly, [[x, 1.19 + Math.cos(a) * .035, z], [x * 1.16, 1.36 + i % 3 * .018, z * 1.1]], 0x514433);
   }
-  camera.position.set(7, 9, 12); orbit.target.set(0, .55, 0); orbit.update();
-  let phase = 0, previous = 0, initialPosition = true;
+  const shadow = mesh(new THREE.CircleGeometry(.30, 24), new THREE.MeshBasicMaterial({ color: 0x030502, transparent: true, opacity: .30, depthWrite: false }), stage);
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = .023;
+  const marker = mesh(new THREE.RingGeometry(.36, .38, 28), new THREE.MeshBasicMaterial({ color: 0xc8eabc, transparent: true, opacity: .47, side: THREE.DoubleSide, depthWrite: false }), stage);
+  marker.rotation.x = -Math.PI / 2; marker.position.y = .026; marker.visible = primary;
+  return { fly, head, wings, legs, shadow, marker, phase: 0, initial: true };
+  }
+  camera.position.set(4.3, 10.8, 10); orbit.target.set(0, .12, 0); orbit.update();
+  const flyObjects = new Map();
+  let previous = 0;
   return { ...view,
     setFruitKind(kind) { placement.material.color.set(fruitMaterials[kind]?.color || fruitMaterials.banana.color); },
-    update(brain = {}, running = false) {
+    update(brain = {}, running = false, music = {}) {
       const now = performance.now() / 1000, dt = Math.min(.07, previous ? now - previous : .033); previous = now;
-      const a = brain.activity || [], mean = a.reduce((sum, v) => sum + clamp(v), 0) / Math.max(1, a.length);
-      const altitude = clamp(brain.height), flying = altitude > .05;
-      if (running && !reducedMotion) phase += dt * (2.4 + mean * 5);
-      const targetX = worldToScene(brain.x ?? .5), targetZ = worldToScene(brain.y ?? .5), targetY = .02 + altitude * 1.75;
-      const ease = initialPosition || reducedMotion ? 1 : 1 - Math.exp(-dt * 13); initialPosition = false;
-      fly.position.x += (targetX - fly.position.x) * ease; fly.position.z += (targetZ - fly.position.z) * ease; fly.position.y += (targetY - fly.position.y) * ease;
-      const targetYaw = Math.PI / 2 - (Number.isFinite(brain.heading) ? brain.heading : 0);
-      const delta = Math.atan2(Math.sin(targetYaw-fly.rotation.y),Math.cos(targetYaw-fly.rotation.y));fly.rotation.y += delta * ease;
-      fly.rotation.x = flying ? -.10 : 0;
-      head.rotation.x = brain.behavior === 'feeding' ? .17 + (running && !reducedMotion ? Math.sin(phase*3)*.04 : 0) : 0;
-      shadow.position.set(fly.position.x,.006,fly.position.z);shadow.scale.setScalar(1+altitude*.4);shadow.material.opacity=.3-altitude*.18;
-      legs.forEach(l => {
-        const signal = clamp(a[l.index]), oscillation = running && !reducedMotion ? Math.sin(phase + l.index * Math.PI * .73) * signal : 0;
-        l.k.copy(l.knee); l.k.y += Math.max(0, oscillation) * .09;
-        l.f.copy(l.foot); l.f.z += oscillation * .11; l.f.y += Math.max(0, oscillation) * .14 + (flying ? .12 : 0);
-        l.toe.copy(l.f); l.toe.x += l.side * .12; l.toe.z += .05; l.toe.y = Math.max(.025, l.f.y - .035);
-        connect(l.upper, l.anchor, l.k); connect(l.lower, l.k, l.f); connect(l.tarsus, l.f, l.toe);
-      });
-      wings.forEach(w => {
-        const beat = running && !reducedMotion ? (flying ? Math.sin(now*67)*.52 : Math.sin(phase*3)*mean*.045) : 0;
-        w.pivot.rotation.z = w.side * (.045+beat);w.pivot.rotation.y = w.side * (flying ? -.2 : -.4);
+      const flies = Array.isArray(brain.flies) && brain.flies.length ? brain.flies : [{...brain, id: 'fly-1'}];
+      const ids = new Set(flies.map((state, index) => state.id ?? `fly-${index + 1}`));
+      for (const [id, model] of flyObjects) { model.fly.visible = ids.has(id); model.shadow.visible = ids.has(id); model.marker.visible = ids.has(id) && id === (flies[0]?.id ?? 'fly-1'); }
+      flies.forEach((state, index) => {
+        const id = state.id ?? `fly-${index + 1}`;
+        if (!flyObjects.has(id)) flyObjects.set(id, createFly(index === 0));
+        const model = flyObjects.get(id), {fly, head, legs, wings, shadow, marker} = model;
+        fly.visible = true; shadow.visible = true;
+        const a = state.activity || [], mean = a.reduce((sum, v) => sum + clamp(v), 0) / Math.max(1, a.length);
+        const altitude = clamp(state.height), flying = altitude > .08;
+        if (running && !reducedMotion) model.phase += dt * (2.4 + mean * 5);
+        const phase = model.phase, targetX = worldToScene(state.x ?? .5), targetZ = worldToScene(state.y ?? .5), targetY = altitude * 1.75;
+        const ease = model.initial || reducedMotion ? 1 : 1 - Math.exp(-dt * 20); model.initial = false;
+        fly.position.x += (targetX - fly.position.x) * ease; fly.position.z += (targetZ - fly.position.z) * ease; fly.position.y += (targetY - fly.position.y) * ease;
+        const targetYaw = Math.PI / 2 - (Number.isFinite(state.heading) ? state.heading : 0);
+        const delta = Math.atan2(Math.sin(targetYaw - fly.rotation.y), Math.cos(targetYaw - fly.rotation.y)); fly.rotation.y += delta * ease;
+        fly.rotation.x = flying ? -.10 : 0;
+        head.rotation.x = state.behavior === 'feeding' ? .17 + (running && !reducedMotion ? Math.sin(phase * 3) * .04 : 0) : 0;
+        shadow.position.set(fly.position.x, .022, fly.position.z); shadow.scale.setScalar(1 + altitude * .4); shadow.material.opacity = .3 - altitude * .18;
+        marker.position.set(fly.position.x, .026, fly.position.z); marker.visible = index === 0;
+        legs.forEach(l => {
+          const signal = clamp(a[l.index]), oscillation = running && !reducedMotion ? Math.sin(phase + l.index * Math.PI * .73) * signal : 0;
+          l.k.copy(l.knee); l.k.y += Math.max(0, oscillation) * .09;
+          l.f.copy(l.foot); l.f.z += oscillation * .11; l.f.y += Math.max(0, oscillation) * .14 + (flying ? .12 : 0);
+          l.toe.copy(l.f); l.toe.x += l.side * .12; l.toe.z += .05; l.toe.y = Math.max(.025, l.f.y - .035);
+          connect(l.upper, l.anchor, l.k); connect(l.lower, l.k, l.f); connect(l.tarsus, l.f, l.toe);
+        });
+        wings.forEach(w => {
+          const beat = running && !reducedMotion ? (flying ? Math.sin(now * 67 + index) * .52 : Math.sin(phase * 3) * mean * .045) : 0;
+          w.pivot.rotation.z = w.side * (.045 + beat); w.pivot.rotation.y = w.side * (flying ? -.2 : -.4);
+        });
       });
       updateFruit(Array.isArray(brain.fruits) ? brain.fruits : []);
-      if (Number.isFinite(brain.time) && brain.time !== lastTrailTime) {
-        if (brain.time < lastTrailTime) trailPoints.length = 0;
-        lastTrailTime = brain.time;
-        trailPoints.push([targetX,.012,targetZ]);if(trailPoints.length>90)trailPoints.shift();
-        trailPoints.forEach((p,i)=>trailPositions.set(p,i*3));trailGeometry.attributes.position.needsUpdate=true;trailGeometry.setDrawRange(0,trailPoints.length);
-      }
+      updateStrings(music, now);
       view.render();
     },
     dispose() {

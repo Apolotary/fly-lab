@@ -1,9 +1,9 @@
 {
   "name": "ableton-fly",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
-  "description": "A fruit-seeking fly turns its movements into a piano piece in Ableton Live.",
+  "description": "Three simulated flies touch virtual strings and play an instrument in Ableton Live.",
   "license": "MIT",
   "engines": {
     "node": ">=24.16.0"

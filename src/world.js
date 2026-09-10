@@ -24,10 +24,11 @@ function randomFrom(seed) {
  * interpolation moves the fly, and silencing the graph stops locomotion.
  */
 export class FlyWorld {
-  constructor({ seed = 1337, brain = new FlyBrain({ seed }) } = {}) {
+  constructor({ seed = 1337, brain = new FlyBrain({ seed }), walkingIntervals = false } = {}) {
     if (!Number.isFinite(seed)) throw new TypeError('World seed must be finite.');
     this.seed = seed;
     this.brain = brain;
+    this.walkingIntervals = walkingIntervals;
     this.reset();
   }
 
@@ -54,6 +55,8 @@ export class FlyWorld {
     this.explorationHeading = this.heading;
     this.nextExplore = 0;
     this.wasAirborne = false;
+    this.gait = this.walkingIntervals ? 'walking' : 'flying';
+    this.nextGait = this.walkingIntervals ? 3 + this.random() * 3 : Infinity;
     this.nextFruitId = 1;
     this.fruits = [];
     this.addFruit({ x: 0.25, y: 0.32, kind: 'banana' });
@@ -160,11 +163,17 @@ export class FlyWorld {
     }
 
     const moving = this.behavior !== 'feeding' && this.behavior !== 'resting';
+    // Optional installation behavior: seeded walking/flight bouts are an
+    // engineered body rule. Neither strings nor musical output influence them.
+    if (this.walkingIntervals && moving && this.time >= this.nextGait) {
+      this.gait = this.gait === 'walking' ? 'flying' : 'walking';
+      this.nextGait = this.time + 3 + this.random() * 4;
+    }
     const approach = this.behavior === 'seeking' && food ? clamp(food.distance / 0.12, 0.15, 1) : 1;
     // Heading control compensates the uncalibrated circuit's left/right bias;
     // its strength, neural steering texture and translation all require motors.
     this.turnRate = moving && energy > 0 ? (clamp(error * 2.8, -2.6, 2.6) + (left - right) * 0.7) * energy : 0;
-    this.speed = moving ? motor * 0.34 * approach : 0;
+    this.speed = moving ? motor * 0.34 * approach * (this.gait === 'walking' ? 0.72 : 1) : 0;
     if (this.turnRate !== 0) this.heading = wrap(this.heading + this.turnRate * dt);
     const previousX = this.x, previousY = this.y;
     this.x = clamp(this.x + Math.cos(this.heading) * this.speed * dt, 0.035, 0.965);
@@ -172,7 +181,8 @@ export class FlyWorld {
     this.distanceTravelled += Math.hypot(this.x - previousX, this.y - previousY);
 
     const nearFood = this.behavior === 'seeking' && food && food.distance < 0.13;
-    const targetHeight = moving && !nearFood ? energy * (0.36 + 0.05 * Math.sin(this.time * 2)) : 0;
+    const targetHeight = moving && !nearFood && this.gait === 'flying'
+      ? energy * (0.36 + 0.05 * Math.sin(this.time * 2)) : 0;
     this.height += (targetHeight - this.height) * (1 - Math.exp(-dt * 4));
     this.height = clamp(this.height);
     if (this.height > 0.12) this.wasAirborne = true;
@@ -197,6 +207,7 @@ export class FlyWorld {
       x: this.x, y: this.y, heading: this.heading,
       height: this.height, speed: this.speed, turnRate: this.turnRate,
       behavior: this.behavior, hunger: this.hunger,
+      gait: this.gait,
       fruits: this.fruits.map((fruit) => ({ ...fruit })),
       visits: this.visits, landingCount: this.landingCount,
       distanceTravelled: this.distanceTravelled,

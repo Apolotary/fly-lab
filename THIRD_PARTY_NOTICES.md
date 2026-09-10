@@ -5,7 +5,7 @@
 The local 3D renderer uses [Three.js](https://threejs.org/), version 0.186.0,
 under its MIT License (copyright Three.js authors). Its license notice is
 retained in the compiled browser script and `ui/licenses/three.txt`.
-The fly, garden and fruit geometry
+The flies, guitar, garden and fruit geometry
 are original procedural artwork; no models or media from the reference videos
 are copied.
 
@@ -20,8 +20,8 @@ upstream notice is in `src/vendor/desktop-fly/LICENSE`.
 
 Ableton Fly's original wrapper supplies artificial descending-neuron stimulation
 from a seeded, modeled environment. Simulated motor rates gate movement and
-turning; an original gesture mapping converts the resulting world state into
-piano notes. Its displayed fly illustrates that simulated state. It does not reproduce
+turning; original geometric string-contact tests convert the resulting world state into
+MIDI notes. Each of three flies uses a separate copy of the same measured graph. Its displayed fly illustrates that simulated state. It does not reproduce
 DesktopFly's articulated body or its female FlyWire brain model.
 
 ## MaleCNS v1.0 circuit data
@@ -80,14 +80,21 @@ binary and compiler cache are excluded from Git.
 The browser preview instrument is an original oscillator-based sound, generated
 locally through the Web Audio API. It contains no recorded piano samples.
 
-## Ableton SDK and factory piano sample
+## Ableton SDK and factory guitar sample
 
 The Ableton Extensions SDK is proprietary and supplied by the user during local
 setup. Its package archives, extracted packages and compiled extension bundles
 are excluded from Git. No SDK source or documentation is redistributed here.
 
-The Live piano instrument loads a Grand Piano sample from the user's installed
+The Live instrument loads an acoustic-guitar sample from the user's installed
 Ableton factory content into Simpler. The sample remains local and is not copied
 into this repository, bundled, uploaded or distributed with MIDI exports. Ableton
 software and factory content retain their respective license terms. This project
 is independent of Ableton.
+
+## Artistic reference
+
+The concept is inspired by Céleste Boursier-Mougenot’s *from here to ear*,
+particularly the [Copenhagen Contemporary installation](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/).
+This project is an independent digital adaptation with original geometry and
+code. No artwork photographs, exhibition recordings or other media are included.

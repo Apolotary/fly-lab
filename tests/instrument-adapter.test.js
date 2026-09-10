@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PianoAdapter, PreviewPianoAdapter } from '../src/piano-adapter.js';
-import { MAX_BEATS, TEMPO } from '../src/gesture-composer.js';
+import { LiveInstrumentAdapter, PreviewInstrumentAdapter } from '../src/instrument-adapter.js';
+import { MAX_BEATS, TEMPO } from '../src/midi-file.js';
 
 function fixture() {
   const created = [], calls = [];
   const failures = { sampleOnce: false, clipOnce: false };
-  const unrelated = { name: 'Fly Piano', arm: true, mute: false };
+  const unrelated = { name: 'Fly Strings', arm: true, mute: false };
   let tempo = 120;
   const song = {
     get tracks() { throw new Error('Do not inspect unrelated tracks.'); },
@@ -43,33 +43,33 @@ function fixture() {
     async close() { calls.push(['close']); this.connected = false; },
   };
   const context = { application: { song } };
-  const adapter = new PianoAdapter(context, { midi, pianoPath: '/local/piano.wav' });
+  const adapter = new LiveInstrumentAdapter(context, { midi, samplePath: '/local/instrument.wav' });
   return { adapter, midi, context, song, created, calls, failures, unrelated };
 }
 
-test('piano setup creates one owned sample instrument and clip at 96 BPM', async () => {
+test('instrument setup creates one owned sample instrument and clip at 96 BPM', async () => {
   const f = fixture();
   await Promise.all([f.adapter.prepare(), f.adapter.prepare()]);
   assert.equal(f.created.length, 1);
   const track = f.created[0];
-  assert.equal(track.name, 'Fly Piano');
+  assert.equal(track.name, 'Fly Strings');
   assert.equal(track.arm, false);
   assert.equal(track.mute, false);
   assert.equal(track.mixer.volume.value, .62);
   assert.equal(track.devices.length, 1);
   assert.equal(track.devices[0].name, 'Simpler');
-  assert.equal(track.devices[0].samplePath, '/local/piano.wav');
+  assert.equal(track.devices[0].samplePath, '/local/instrument.wav');
   assert.equal(track.clips.length, 1);
   assert.equal(track.clips[0].startTime, 0);
   assert.equal(track.clips[0].duration, MAX_BEATS);
   assert.equal(f.song.tempo, TEMPO);
   assert.equal(f.adapter.prepared, true);
   assert.equal(f.adapter.snapshot().muted, false);
-  assert.deepEqual(f.unrelated, { name: 'Fly Piano', arm: true, mute: false });
+  assert.deepEqual(f.unrelated, { name: 'Fly Strings', arm: true, mute: false });
   assert.ok(!JSON.stringify(f.adapter.snapshot()).includes('/local/'));
 });
 
-test('piano setup resumes failed sample loading and clip creation without duplicates', async () => {
+test('instrument setup resumes failed sample loading and clip creation without duplicates', async () => {
   for (const failure of ['sampleOnce', 'clipOnce']) {
     const f = fixture();
     f.failures[failure] = true;
@@ -140,7 +140,7 @@ test('recording captures immutable notes, converts seconds to beats and truncate
   assert.ok(Math.abs(written[1].duration - .1) < 1e-10);
 });
 
-test('Panic mutes and disarms the owned piano; Start can resume it', async () => {
+test('Panic mutes and disarms the owned instrument; Start can resume it', async () => {
   const f = fixture();
   await f.adapter.prepare();
   await f.adapter.start();
@@ -182,7 +182,7 @@ test('a missing MIDI port prevents setup or performance and the preview needs pr
   f.midi.connected = false;
   await assert.rejects(f.adapter.start(), /MIDI port/);
   assert.throws(() => f.adapter.play([]), /disconnected/);
-  const preview = new PreviewPianoAdapter();
+  const preview = new PreviewInstrumentAdapter();
   await assert.rejects(preview.start(), /Prepare/);
   await preview.prepare(); await preview.start(); await preview.panic();
   assert.equal(preview.snapshot().muted, true);

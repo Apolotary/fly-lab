@@ -1,8 +1,8 @@
-import { FlyWorld } from './world.js';
-import { GestureComposer } from './gesture-composer.js';
+import { FlyGarden } from './garden.js';
+import { StringComposer } from './string-instrument.js';
 
 export class FlyController {
-  constructor(adapter, { mode = 'demo', world = new FlyWorld(), composer = new GestureComposer() } = {}) {
+  constructor(adapter, { mode = 'demo', world = new FlyGarden(), composer = new StringComposer() } = {}) {
     Object.assign(this, { adapter, mode, world, composer });
     this.running = false;
     this.busy = false;
@@ -12,7 +12,7 @@ export class FlyController {
     this.lastSeen = Date.now();
     this.lastSave = 0;
     this.timer = null;
-    this.addEvent(mode === 'live' ? 'Connected to Live. Prepare the piano in an empty Set.' : 'Browser rehearsal. Prepare the piano to hear the movement mapping.');
+    this.addEvent(mode === 'live' ? 'Connected to Live. Prepare the instrument in an empty Set.' : 'Browser rehearsal. Prepare the instrument to hear the string contacts.');
   }
   addEvent(text) {
     this.events.unshift({ time: new Date().toLocaleTimeString('en-GB'), text });
@@ -40,7 +40,7 @@ export class FlyController {
     if (action === 'stimulus') { this.world.setStimulus({ drive: input.drive }); return this.snapshot(); }
     if (action === 'fruit') {
       this.world.addFruit({ x: input.x, y: input.y, kind: input.kind });
-      this.addEvent('Fruit placed. Its scent changes the fly’s route.');
+      this.addEvent('Fruit placed. Its scent changes the flies’ routes.');
       return this.snapshot();
     }
     if (action === 'clearFruit') { this.world.clearFruit(); return this.snapshot(); }
@@ -54,7 +54,7 @@ export class FlyController {
       await this.pending;
       if (action === 'prepare') {
         await this.adapter.prepare();
-        this.addEvent('Piano ready at 96 BPM. Keep Live stopped; the fly plays its MIDI input directly.');
+        this.addEvent('Instrument ready at 96 BPM. Keep Live stopped; string contacts play its MIDI input directly.');
       } else if (action === 'start') {
         if (this.composer.complete) throw new Error('Piece complete. Save MIDI and restart for another piece.');
         await this.adapter.start();
@@ -62,20 +62,20 @@ export class FlyController {
         this.lastSave = 0;
         this.lastTick = Date.now();
         this.heartbeat();
-        this.addEvent('Exploring. Position becomes pitch; movement and landings make the rhythm.');
+        this.addEvent('Exploring. Flies touching strings make notes; free flight is silent.');
       } else {
         try { await this.adapter.recordNotes(this.composer.notes); }
         finally {
           if (action === 'panic') await this.adapter.panic();
           else await this.adapter.stop();
         }
-        this.addEvent(action === 'panic' ? 'Piano muted and all notes released.' : 'Fly paused. Notes saved in Live; press Play there to replay, or Save MIDI.');
+        this.addEvent(action === 'panic' ? 'Instrument muted and all notes released.' : 'Flies paused. Notes saved in Live; press Play there to replay, or Save MIDI.');
       }
       this.error = null;
     } catch (error) {
       this.running = false;
       this.adapter.midi?.panic();
-      this.error = !this.adapter.prepared ? 'Prepare the piano first. Check the local terminal if setup failed.' : 'Live action failed. Check the local terminal and reconnect if the Set changed.';
+      this.error = !this.adapter.prepared ? 'Prepare the instrument first. Check the local terminal if setup failed.' : 'Live action failed. Check the local terminal and reconnect if the Set changed.';
       if (this.mode === 'demo' || this.composer.complete) this.error = error.message;
       console.error('Ableton Fly action failed:', error);
       throw new Error(this.error);
@@ -84,7 +84,7 @@ export class FlyController {
   }
   fail(error) {
     this.running = false;
-    this.error = 'Piano connection lost. Reconnect the extension before continuing.';
+    this.error = 'Instrument connection lost. Reconnect the extension before continuing.';
     this.addEvent(this.error);
     console.error('Ableton Fly performance failed:', error);
     return this.adapter.panic().catch(() => {});

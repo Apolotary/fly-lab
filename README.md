@@ -1,133 +1,120 @@
 # ableton-fly
 
-**A fly doing fly things. Somehow, a piano.**
+**From fruit to ear. Three flies, six strings, Ableton.**
 
-A simulated fruit fly explores a tiny garden, seeks fruit, lands, feeds and rests.
-Its position, speed and turns become piano notes in Ableton Live. Put Live on the
-left, the measured neural circuit and 3D habitat on the right, and record the
-resulting small animal concert.
+Three simulated fruit flies explore a miniature guitar habitat. They walk, fly,
+seek fruit and feed. A fly crossing a string near the surface or landing on it
+triggers a MIDI note in Ableton Live. The touched string flashes so you can see
+what made the sound. Moving fruit changes where the flies go.
 
-The project runs locally with a **1,045-neuron motor circuit**, an original
-Three.js world, and a small macOS MIDI bridge. It needs no cloud GPU, API key,
-third-party MIDI driver or whole-connectome download.
+Inspired by Céleste Boursier-Mougenot’s **from here to ear**, in which zebra
+finches move freely and make sound by touching amplified guitar strings.
+[Copenhagen Contemporary’s exhibition description](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/)
+is the reference for this independent digital adaptation. No exhibition images,
+recordings, or models are copied.
 
-## Let the fly explore
+The project runs locally: Three.js, three copies of a small measured motor
+circuit, and an original macOS MIDI bridge. No cloud GPU, API key, third-party
+MIDI driver or whole-connectome download is needed.
+
+## Start the installation
 
 Requires macOS, **Node.js 24.16+**, **Xcode Command Line Tools**, an
 Extensions-compatible Ableton Live Suite beta, and your own
-**Extensions SDK 1.0.0-beta.1 ZIP**. The SDK and Ableton sounds are not included.
+**Extensions SDK 1.0.0-beta.1 ZIP**. Ableton’s SDK and sounds are not included.
 
-1. Double-click **Setup Fly.command** once. Drag your SDK ZIP into the terminal
+1. Double-click **Setup Fly.command** once and drag your SDK ZIP into the terminal
    when asked. Setup detects Live in Applications folders, including
-   `Applications2` on an external drive, and builds the local MIDI bridge.
-2. Open an **empty Live Set** with Extensions enabled. Save any existing work
-   before switching Sets. Preparation sets this Set to **96 BPM**.
-3. Double-click **Start Fly.command** and keep its terminal open.
-4. In Live's MIDI settings, enable **Track** for the **Ableton Fly** input.
-   This is a one-time routing step; the input appears while the extension runs.
-   Close Settings afterward so the beta extension can continue.
-5. Click **Prepare piano**. It creates one **Fly Piano** MIDI track, loads a
-   local factory Grand Piano sample into Simpler, and creates an arrangement
-   MIDI clip for the performance.
-6. **Keep Live's transport stopped**, then click **Let fly explore**. The owned
-   piano track is armed for incoming MIDI, so its notes sound immediately.
+   `Applications2` on an external drive, and compiles the local MIDI bridge.
+2. Open an **empty Live Set** with Extensions enabled. Save existing work before
+   switching Sets and finish any save dialog. Preparation sets this Set to 96 BPM.
+3. Double-click **Start Fly.command** and keep its terminal open. The launcher
+   opens Chrome when installed, with your default browser as a fallback.
+4. In Live’s **Tempo & MIDI** settings, enable **Track** for **Ableton Fly** if it
+   is not already enabled. Close Settings afterward so the beta can continue.
+5. Click **Prepare instrument**. This creates one **Fly Strings** MIDI track,
+   loads a local factory acoustic-guitar sample into Simpler, and creates an
+   arrangement clip for the performance.
+6. Keep Live’s transport **stopped**, then click **Let flies explore**.
 
-Choose **Banana**, **Apple** or **Grape**, then click the garden floor to place
-fruit. There is room for six pieces. **Clear** removes the fruit and lets the fly
-wander. Drag either 3D view to rotate it.
+Choose Banana, Apple or Grape, then click the habitat to place fruit. Up to six
+pieces share the space. **Clear** removes the fruit. The flies continue exploring.
+Their string contacts play Live’s MIDI input immediately. The instrument is
+armed for monitoring; the extension does not start the transport or global recording.
 
-**Pause** stops incoming notes and disarms the piano track. You can then press
-**Play in Live from bar 1** to replay the recorded arrangement clip. Keep the
-transport stopped while the fly explores to avoid hearing the live notes and
-clip playback together. **Save MIDI** downloads the generated performance as a
-portable `.mid` file, including its 96 BPM tempo.
+**Pause** releases notes and disarms the track. Press **Play in Live from bar 1**
+to replay its recorded clip. Stop the transport before resuming the flies.
+**Save MIDI** exports the performance, including its timing and tempo.
+**Panic** or Escape releases notes and mutes the owned track; Start unmutes it.
+Closing the dashboard pauses the flies after ten seconds.
 
-**Panic**, or **Escape**, stops live notes and mutes the Fly Piano track. Starting
-again unmutes it. Closing the dashboard pauses the fly after ten seconds. Pause
-before closing the launcher terminal. Other tracks are not adopted or controlled;
-the extension never starts the transport or enables global recording.
+To hear a piano instead, replace the Fly Strings instrument in Live with a piano
+preset. The same string contacts play that instrument. Pause before editing it.
 
-Preparation is idempotent while the extension runs. After restarting it, preparing
-creates a new owned piano track rather than identifying old tracks by name.
-Restart the extension after changing Live Sets.
+Preparation creates a single owned track per running extension. Restarting the
+extension and preparing again creates a new track. For another take, pause,
+close the launcher, save your Set, open a new empty Set and restart the launcher.
+Complete any save prompt before preparing. Restart after changing Sets.
 
-## The split-screen video
+## Make the split-screen video
 
-Open the local dashboard in **Chrome**. Click **Choose Ableton window** and select
-Live in the browser's chooser. The left side shows that real window; the right
-side shows the motor circuit and habitat. The screen stream stays inside your
-browser. The app does not record or upload it. Use your usual screen recorder to
-capture the completed layout.
+In Chrome, click **Choose Ableton window** and select Live. The left side shows
+the actual Live window; the right side shows fly 01’s measured motor circuit and
+all three flies in the habitat. Drag either 3D view to rotate it.
 
-If the sharing prompt does not open, focus the browser window and click again.
-If window sharing is unavailable, select **Companion view** and place its window
-to the right of the native Ableton window. The browser may need macOS Screen
-Recording permission to share a window.
+The screen stream stays inside your browser. The app does not record or upload
+it. Use your usual screen recorder to capture the layout. If the sharing prompt
+does not open, bring the Chrome window forward and click again. **Companion view**
+also lets you place the habitat beside native Live without window sharing.
 
-## What makes the music?
+## What makes a note?
 
-The MIT-licensed spiking simulator and measured circuit come from
-[DesktopFly](https://github.com/DenisSergeevitch/desktop-fly). Its selected MaleCNS
-motor circuit contains **1,045 neurons**, **17,224 directed connections**, and
-**708,689 synaptic contacts**. This is a brain-to-leg subset, largely in the nerve
-cord, rather than the whole brain.
+The six visible strings have fixed pitches: C3, G3, C4, E4, G4 and C5 in scientific
+pitch notation (MIDI 48, 55, 60, 64, 67 and 72). Live’s octave labels differ.
 
-Fruit locations and exploration rules supply artificial descending input. The
-simulated circuit's motor population activity gates the fly's movement and
-turning. A separate musical mapping translates that movement into notes:
+- Crossing a finite string near the surface, or descending onto it, creates a note.
+- Touch speed affects note strength. Holding still on a string does not repeat notes.
+- Flight above the strings is silent. There are no automatic turns, landing chords,
+  rhythmic backing tracks or notes generated from horizontal position alone.
+- Contacts retain their timing; they are not snapped to an eighth-note grid.
+  96 BPM is the clip/export time reference. Capture stops at 128 bars or the note limit.
 
-| Animal state | Musical result |
-| --- | --- |
-| Horizontal position | Pitch from C-major pentatonic |
-| Movement speed | Velocity and note density |
-| Turning | Shorter, more frequent notes |
-| Landing | A small chord |
-| Feeding or resting | A musical rest |
+Contacts use simple geometric tests against the displayed string segments and a
+small height threshold. They approximate body contact; they do not solve leg
+forces, string mechanics or aerodynamics. Pitches, tuning, sensitivity and sound
+are instrument-design choices. This is a toy virtual installation.
 
-Notes fall on an eighth-note grid at **96 BPM**. The performance is written into
-Live's arrangement clip as it develops and can also be exported as MIDI. The
-piece stops growing after 128 bars or the note limit. Musical rules, scale,
-quantization and piano sound are chosen by the software's author.
+Each fly runs an independent copy of DesktopFly’s **1,045-neuron MaleCNS motor
+subset**, with **17,224 directed connections** and **708,689 synaptic contacts**.
+All three use the same measured wiring with different seeded inputs. The anatomy
+counts describe each copy, not three different measured animals. Simulated motor
+activity gates movement and turning. Disabling the measured synapses stops motion
+and contact-generated music in tests.
 
-Hunger, fruit seeking, feeding and flight height are **toy behavioral rules**
-around the measured motor circuit. Fruit kinds are equally attractive; their
-positions change the trajectory. There is no modeled favorite fruit, biological
-olfactory system, reward learning or musical feedback. The fly does not hear the
-piano or learn to compose.
+Fruit sensing, shared food, hunger, walking/flight intervals and steering are
+engineered behavioral rules. All fruit kinds are equally attractive. There is no
+biological olfactory model, musical reward or learned composition; the flies do
+not hear or understand the music. The brain display shows fly 01 only: 880 actual
+soma positions, with the other 165 neurons still included in its simulation.
 
-The neural view plots the **880 neurons with measured soma coordinates**, colored
-by simulated activity. The 165 neurons without positions still participate in
-the circuit. The fly's displayed position follows the simulated world; its
-anatomy, joint motion and wingbeats are original illustrative geometry rather
-than a biomechanical physics model.
-
-See [artistic inspiration](docs/INSPIRATION.md),
-[the reference demo's OSS stack and alternatives](docs/OSS_OPTIONS.md), and
-[full data provenance](THIRD_PARTY_NOTICES.md).
+See [the artistic inspiration](docs/INSPIRATION.md),
+[OSS choices](docs/OSS_OPTIONS.md), and [data provenance](THIRD_PARTY_NOTICES.md).
 
 Suggested caption:
 
-> I gave a simulated fruit fly a garden. Its movements play piano in Ableton.
+> Inspired by from here to ear: three simulated flies touch virtual strings and play Ableton.
 
-## Local development
+## Development and preview
 
 ```sh
 npm run setup -- /path/to/extensions-sdk.zip "/path/to/Ableton Live Beta.app"
 npm start
 ```
 
-To try the world without Live or the SDK:
-
-```sh
-npm install
-npm run demo
-```
-
-Open [the local dashboard](http://127.0.0.1:9321), prepare the piano, then let the
-fly explore. **Preview mode** plays a quiet synthesized piano-like sound in the
-browser after you click **Let fly explore**. It does not control Live or use
-Ableton samples.
-You can mute the preview and still export its generated MIDI.
+Without Live or its SDK: `npm install`, then `npm run demo` and open
+[the local dashboard](http://127.0.0.1:9321). Prepare the instrument and start the
+flies to unlock the browser’s original synthesized preview. Preview mode never
+controls Live and contains no Ableton samples. MIDI export also works there.
 
 ```sh
 npm test
@@ -135,24 +122,17 @@ npm run build
 npm run check:privacy -- --staged
 ```
 
-The original Swift bridge uses Apple's CoreMIDI framework and creates the
-**Ableton Fly** MIDI source. Its compiled binary and compiler cache stay in
-ignored `.local/`. Notes have timed note-offs; pause, shutdown and panic send
-cleanup messages. MIDI uses channel 1.
-
 ## Privacy and licenses
 
-The server binds only to `127.0.0.1`, validates Host and Origin, and requires a
-per-run token for control requests and MIDI export. There is no telemetry,
-analytics, cloud processing or remote asset loading. Detailed errors stay in the
-local terminal.
+The server binds to `127.0.0.1`, validates Host and Origin, and requires a per-run
+token for actions and MIDI export. There is no telemetry, remote asset loading,
+cloud processing or upload. Detailed errors remain in the local terminal.
 
-The piano sample is read from your installed Live factory content and is **never
-redistributed**. Git excludes the proprietary SDK, local settings and installation
-paths, dependencies, generated bundles and binaries, audio, MIDI exports, Live
-Sets, logs and recordings.
+Git excludes the proprietary SDK, settings and installation paths, dependencies,
+bundles, native binaries, audio, MIDI exports, Live Sets, logs and recordings.
+The guitar sample is read from your installed Live factory content and is never
+redistributed. The native bridge uses Apple’s installed CoreMIDI framework.
 
-Original code is MIT licensed; the measured MaleCNS data is CC BY 4.0. Attribution
-is retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Ableton's SDK and
-factory content retain their own terms and must be supplied locally. This is an
-independent project.
+Original code is MIT licensed; the measured MaleCNS extract is CC BY 4.0.
+Attribution is retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Ableton’s SDK and factory sounds must be supplied locally under their own terms.

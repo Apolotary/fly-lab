@@ -1,6 +1,6 @@
 import { initialize, Simpler } from '@ableton-extensions/sdk';
 import { FlyController } from './controller.js';
-import { PianoAdapter } from './piano-adapter.js';
+import { LiveInstrumentAdapter } from './instrument-adapter.js';
 import { MidiOutput } from './midi-output.js';
 import { startServer } from './server.js';
 import html from '../ui/index.html';
@@ -12,7 +12,7 @@ export async function activate(activation) {
   const context = initialize(activation, '1.0.0');
   const midi = new MidiOutput({ binaryPath: __FLY_MIDI_PATH__ });
   await midi.open();
-  const controller = new FlyController(new PianoAdapter(context, { midi, pianoPath: __FLY_PIANO_PATH__,
+  const controller = new FlyController(new LiveInstrumentAdapter(context, { midi, samplePath: __FLY_SAMPLE_PATH__,
     resolveSimpler: device => context.getObjectFromHandle(device.handle, Simpler) }), { mode: 'live' });
   midi.onError = error => { controller.pending = controller.fail(error); };
   try { app = await startServer(controller, html); } catch (error) { await midi.close(); throw error; }

@@ -1,14 +1,14 @@
-import { MAX_BEATS, TEMPO } from './gesture-composer.js';
+import { MAX_BEATS, TEMPO } from './midi-file.js';
 
 const NEUTRAL_LEVEL = .62;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 function parameterValue(parameter, amount) { return parameter.min + (parameter.max - parameter.min) * amount; }
 
-export class PianoAdapter {
-  constructor(context, { midi, pianoPath, resolveSimpler = device => device } = {}) {
+export class LiveInstrumentAdapter {
+  constructor(context, { midi, samplePath, resolveSimpler = device => device } = {}) {
     this.context = context;
     this.midi = midi;
-    this.pianoPath = pianoPath;
+    this.samplePath = samplePath;
     this.resolveSimpler = resolveSimpler;
     this.prepared = false;
     this.muted = true;
@@ -16,7 +16,7 @@ export class PianoAdapter {
     this.record = null;
     this.tail = Promise.resolve();
   }
-  snapshot() { return { tempo: TEMPO, source: 'Fly Piano', midiConnected: Boolean(this.midi?.connected), muted: this.muted }; }
+  snapshot() { return { tempo: TEMPO, source: 'Fly Strings', midiConnected: Boolean(this.midi?.connected), muted: this.muted }; }
   enqueue(operation) {
     const next = this.tail.then(operation);
     this.tail = next.catch(() => {});
@@ -37,16 +37,16 @@ export class PianoAdapter {
         if (!this.record) this.record = { track: await song.createMidiTrack(), device: null, rawDevice: null, sampleReady: false, clip: null };
         const record = this.record;
         song.tempo = TEMPO;
-        record.track.name = 'Fly Piano';
+        record.track.name = 'Fly Strings';
         record.track.arm = false;
         record.track.mute = true;
         await record.track.mixer.volume.setValue(parameterValue(record.track.mixer.volume, NEUTRAL_LEVEL));
         if (!record.rawDevice) record.rawDevice = await record.track.insertDevice('Simpler', 0);
         if (!record.device) record.device = this.resolveSimpler(record.rawDevice);
         record.track.arm = false;
-        if (!record.sampleReady) { await record.device.replaceSample(this.pianoPath); record.sampleReady = true; }
+        if (!record.sampleReady) { await record.device.replaceSample(this.samplePath); record.sampleReady = true; }
         if (!record.clip) record.clip = await record.track.createMidiClip(0, MAX_BEATS);
-        record.clip.name = 'Fly field notes · C pentatonic · 96 BPM';
+        record.clip.name = 'From fruit to ear · string contacts';
         record.track.arm = false;
         record.track.mute = false;
         this.muted = false;
@@ -61,7 +61,7 @@ export class PianoAdapter {
   start() {
     return this.enqueue(async () => {
       this.song();
-      if (!this.prepared || !this.midi.connected) throw new Error('Prepare the piano and MIDI port first.');
+      if (!this.prepared || !this.midi.connected) throw new Error('Prepare the instrument and MIDI port first.');
       this.midi.panic();
       this.record.track.mute = false;
       // This owned track is armed only for monitoring the virtual MIDI input.
@@ -104,11 +104,11 @@ export class PianoAdapter {
   async close() { try { await this.stop(); } finally { await this.midi?.close(); } }
 }
 
-export class PreviewPianoAdapter {
+export class PreviewInstrumentAdapter {
   constructor() { this.prepared = false; this.muted = true; }
   snapshot() { return { tempo: TEMPO, source: 'Browser rehearsal', midiConnected: false, muted: this.muted }; }
   async prepare() { this.prepared = true; this.muted = false; }
-  async start() { if (!this.prepared) throw new Error('Prepare the piano first.'); this.muted = false; }
+  async start() { if (!this.prepared) throw new Error('Prepare the instrument first.'); this.muted = false; }
   play() {}
   async recordNotes() {}
   async stop() {}

@@ -1,9 +1,16 @@
-# A fly doing fly things, translated into piano
+# From fruit to ear: an animal-driven virtual instrument
 
-The artistic idea is to give a simulated fly a small environment to explore,
-then translate its movement into musical events. Food changes its behavior;
-the music follows. The instrument designer chooses how movement becomes sound.
-This does not require the fly to understand music or learn to be a composer.
+The direct reference is Céleste Boursier-Mougenot’s *from here to ear v. 21* at
+Copenhagen Contemporary. The installation placed zebra finches among electric
+guitars and basses; their contact with the strings generated sound as they moved
+freely. Visitors’ presence also changed the birds’ behavior.
+[Primary exhibition description](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/).
+
+Our independent digital adaptation uses three simulated flies and six virtual
+strings, with fruit influencing movement. Contact triggers MIDI; Ableton supplies
+the instrument sound. Free flight creates no notes. This carries over the idea of
+an environment that makes ordinary behavior audible. It does not reproduce the
+original work’s living animals, acoustic response, scale or recordings.
 
 ## Three documented precedents
 
@@ -31,9 +38,9 @@ fruit locations + exploration rules
         ↓ artificial sensory/descending input
 selected fly motor circuit
         ↓ simulated motor population activity
-virtual movement: position, speed, turning, pauses
-        ↓ musical mapping chosen by us
-piano note events → Ableton
+three independent motor circuits → virtual movement
+        ↓ finite string segments + geometric contact tests
+visible string contact → MIDI → Ableton instrument
 ```
 
 The measured wiring comes from the MaleCNS locomotor subset distributed by
@@ -47,14 +54,14 @@ Fruit attraction, hunger, wandering and feeding pauses are engineered behavior
 rules around this motor circuit. This subset does not supply a validated
 olfactory system or reward-learning model. Changing fruit can therefore change
 the artificial input, trajectory and resulting notes; it cannot demonstrate a
-real fly's favorite fruit or an acquired taste for piano. No musical reward is
+real fly's favorite fruit or an acquired taste for the instrument. No musical reward is
 fed back into the circuit.
 
-Position can choose a pitch from a restricted scale, speed can influence note
-density and velocity, and a landing can mark a phrase boundary. Those choices
-make the movement audible and keep the result playable. They are compositional
-decisions made by the software's author. The fly's motion supplies the changing
-input.
+Each string has a fixed pitch. Geometric crossings near the surface and landings
+on strings trigger notes with unsnapped timing; speed influences velocity. A
+stationary fly does not repeatedly pluck a string. The geometry, tuning and
+sensitivity are authored choices, and the body-contact test is a simple proxy,
+not a biomechanical or string-force simulation.
 
 ## Open-source alternatives for a more detailed body
 

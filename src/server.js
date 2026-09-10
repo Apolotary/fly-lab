@@ -29,7 +29,7 @@ export async function startServer(controller, html, { port = 9321 } = {}) {
     }
     if (req.method === 'GET' && req.url === '/api/midi') {
       if (!authenticated) return send(403, { error: 'Reload the dashboard.' });
-      res.writeHead(200, { 'Content-Type': 'audio/midi', 'Content-Disposition': 'attachment; filename=fly-field-notes.mid' });
+      res.writeHead(200, { 'Content-Type': 'audio/midi', 'Content-Disposition': 'attachment; filename=from-fruit-to-ear.mid' });
       return res.end(controller.midiFile());
     }
     if (req.method !== 'POST' || req.url !== '/api/action') return send(404, { error: 'Not found.' });
