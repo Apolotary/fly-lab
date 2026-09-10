@@ -1,6 +1,6 @@
 {
   "name": "ableton-fly",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "Three simulated flies turn fruit visits or virtual string contacts into Ableton MIDI.",

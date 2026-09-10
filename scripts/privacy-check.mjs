@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 const staged = process.argv.includes('--staged');
 const paths = execFileSync('git', staged ? ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'] : ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
 const blocked = /^vendor\//i;
-const privateFiles = /(^|\/)(node_modules|\.local|dist|output|\.env(?:\..*)?)(\/|$)|\.(?:tgz|zip|ablx|als|alc|adg|amxd|wav|aiff?|midi?|flac|mp3|mp4|mov|log)$/i;
+const privateFiles = /(^|\/)(node_modules|\.local|dist|output|\.env(?:\..*)?)(\/|$)|\.(?:tgz|zip|ablx|als|alc|adg|amxd|wav|aiff?|midi?|flac|mp3|mp4|webm|m4a|mov|log)$/i;
 const patterns = [
   /gh[pousr]_[A-Za-z0-9_]{25,}/,
   /github_pat_[A-Za-z0-9_]{25,}/,

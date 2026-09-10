@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { neurons } from '../data/locomotor_circuit.json';
+import { createDemoRecorder } from './recorder.js';
+
+window.createDemoRecorder = createDemoRecorder;
 
 const clamp = (n, min = 0, max = 1) => Math.max(min, Math.min(max, Number.isFinite(n) ? n : min));
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

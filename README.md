@@ -72,10 +72,20 @@ In Chrome, click **Choose Ableton window** and select Live. The left side shows
 the actual Live window; the right side shows fly 01’s measured motor circuit and
 all three flies in the habitat. Drag either 3D view to rotate it.
 
-The screen stream stays inside your browser. The app does not record or upload
-it. Use your usual screen recorder to capture the layout. If the sharing prompt
-does not open, bring the Chrome window forward and click again. **Companion view**
-also lets you place the habitat beside native Live without window sharing.
+The screen stream stays inside your browser. Enable audio in the sharing picker
+to include Live's sound, then click **Record video** and **Let flies explore**.
+Move or replenish fruit during the take. **Stop & save** downloads a landscape
+video with the Live window, circuit, and habitat; recording also stops after two
+minutes. The recorder never uploads anything or uses the microphone.
+
+The recording status reports whether shared audio is available. If it says
+**Video only**, the file has no sound: export the performance's audio from Live
+separately. Browser rehearsal can record its own synthesized preview sound.
+Recording does not start the flies or Live's transport automatically.
+
+If the sharing prompt does not open, bring Chrome forward and click again.
+**Companion view** also lets you place the habitat beside native Live without
+window sharing. Keep the browser visible while recording.
 
 ## What makes a note?
 

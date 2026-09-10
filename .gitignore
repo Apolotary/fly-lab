@@ -22,6 +22,8 @@ output/
 *.flac
 *.mp3
 *.mp4
+*.webm
+*.m4a
 *.mov
 .DS_Store
 .codex/
