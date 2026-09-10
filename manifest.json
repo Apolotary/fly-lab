@@ -1,7 +1,7 @@
 {
   "name": "fly-lab",
   "author": "Apolotary",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "entry": "dist/extension.cjs",
   "minimumApiVersion": "1.0.0"
 }

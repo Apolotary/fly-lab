@@ -11,7 +11,11 @@ async function dashboard({ recording = false, delayEnergy = false, delayLearning
   class Element {
     constructor(dataset = {}) {
       this.dataset = dataset; this.style = {}; this.attributes = {}; this.handlers = {};
-      this.classList = { toggle() {}, add() {}, remove() {} }; this.parentElement = this;
+      const classes = new Set();
+      this.classList = {
+        toggle(name, enabled = !classes.has(name)) { if (enabled) classes.add(name); else classes.delete(name); return enabled; },
+        add(name) { classes.add(name); }, remove(name) { classes.delete(name); }, contains(name) { return classes.has(name); },
+      }; this.parentElement = this;
     }
     addEventListener(name, callback) { this.handlers[name] = callback; }
     setAttribute(name, value) { this.attributes[name] = value; }
@@ -23,7 +27,7 @@ async function dashboard({ recording = false, delayEnergy = false, delayLearning
   const energy = ['calm', 'lively', 'wild'].map(value => new Element({ energy: value }));
   const modes = ['dark', 'tombola', 'ambient', 'fruit', 'strings'].map(instrumentMode => new Element({ instrumentMode }));
   const fruits = ['banana', 'apple', 'grape'].map(fruit => new Element({ fruit }));
-  const requests = [];
+  const requests = [], recordings = [];
   let releaseEnergy;
   const energyGate = new Promise(resolve => { releaseEnergy = resolve; });
   let releaseLearning;
@@ -45,7 +49,7 @@ async function dashboard({ recording = false, delayEnergy = false, delayLearning
     window: {
       AudioContext() { throw new Error('Live controls must not start preview audio.'); },
       createBrainScene: scene, createFlyScene: scene,
-      createDemoRecorder: () => ({ active: recording, stopping: false }), addEventListener() {},
+      createDemoRecorder: () => ({ active: recording, stopping: false, start(options) { recordings.push(options); this.active = true; } }), addEventListener() {},
     },
     navigator: {}, requestAnimationFrame() {}, setTimeout() { return 1; }, clearTimeout() {},
     async fetch(url, options) {
@@ -68,7 +72,7 @@ async function dashboard({ recording = false, delayEnergy = false, delayLearning
   };
   vm.runInNewContext(script, sandbox);
   await setImmediate();
-  return { elements, energy, modes, requests, releaseEnergy, releaseLearning };
+  return { elements, energy, modes, requests, releaseEnergy, releaseLearning, recordings, body: sandbox.document.body };
 }
 
 test('energy changes wait for the server before selecting a button and use the energy action', async () => {
@@ -194,4 +198,26 @@ test('missing scores are unknown and the learning controls are hidden outside Da
   assert.equal(ambient.elements.get('dark-controls').hidden, true);
   assert.equal(ambient.elements.get('dark-credit').hidden, true);
   assert.equal(ambient.elements.get('dark-learning').disabled, true);
+});
+
+test('monochrome defaults on, follows the local toggle and locks the chosen recorder style during a take', async () => {
+  const f = await dashboard({ mode: 'dark' }), toggle = f.elements.get('monochrome');
+  assert.equal(toggle.attributes['aria-pressed'], 'true');
+  assert.equal(toggle.textContent, 'Monochrome');
+  assert.equal(f.body.classList.contains('is-monochrome'), true);
+  await toggle.handlers.click();
+  assert.equal(toggle.attributes['aria-pressed'], 'false');
+  assert.equal(toggle.textContent, 'Color');
+  assert.equal(f.body.classList.contains('is-monochrome'), false);
+  assert.equal(f.requests.length, 0, 'appearance does not change the simulation or send MIDI actions');
+  await f.elements.get('record-video').handlers.click();
+  assert.equal(f.recordings.length, 1);
+  assert.equal(f.recordings[0].monochrome, false);
+  assert.equal(f.recordings[0].source, 'shared');
+  assert.equal(toggle.disabled, true);
+  await toggle.handlers.click();
+  assert.equal(toggle.attributes['aria-pressed'], 'false', 'the visible style cannot diverge from an active recording');
+  const defaultTake = await dashboard();
+  await defaultTake.elements.get('record-video').handlers.click();
+  assert.equal(defaultTake.recordings[0].monochrome, true);
 });

@@ -12,7 +12,7 @@ function fitImage(context, source, x, y, width, height) {
 
 export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onChange = () => {}, onError = () => {}}) {
   let recorder = null, canvas = null, context = null, outputStream = null, timer = null, chunks = [], startedAt = 0;
-  let active = false, stopping = false, lastSecond = -1, audioSource = 'none', ending = '', mimeType = '', byteCount = 0;
+  let active = false, stopping = false, lastSecond = -1, audioSource = 'none', ending = '', mimeType = '', byteCount = 0, recordingMonochrome = true;
   const status = () => ({active, stopping, seconds: active ? Math.min(MAX_SECONDS, Math.floor((performance.now() - startedAt) / 1000)) : 0, audioSource});
   const emit = () => onChange(status());
   function cleanTracks() {outputStream?.getTracks().forEach(track => track.stop()); outputStream = null;}
@@ -24,6 +24,10 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
     const title = darkMode ? 'DARK LAB · ONE FLY' : tombolaMode ? 'FLY TOMBOLA' : ambientMode ? `AMBIENT SWARM · ${energy.toUpperCase()}` : fruitMode ? 'FRUIT → MIDI' : 'FROM FRUIT TO EAR', seconds = Math.floor((performance.now() - startedAt) / 1000);
     const sharedVideo = video?.srcObject && video.readyState >= 2 && video.videoWidth > 0;
     const ctx = context;
+    // Filter the actual composite pixels, including the shared Live window,
+    // both WebGL views, labels and backgrounds. CSS filters alone do not get
+    // encoded by canvas.captureStream(). Keep this choice fixed for each take.
+    ctx.filter = recordingMonochrome ? 'grayscale(1)' : 'none';
     ctx.fillStyle = darkMode ? '#08060d' : '#050606'; ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
     const text = (value, x, y, size = 13, color = '#91a194') => {ctx.fillStyle = color; ctx.font = `${size}px ui-monospace, Menlo, monospace`; ctx.fillText(value, x, y);};
@@ -67,7 +71,7 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
     ending = reason; stopping = true; clearTimeout(timer); timer = null; emit();
     if (recorder?.state !== 'inactive') recorder.stop();
   }
-  function start({audioTracks = [], source = 'none'} = {}) {
+  function start({audioTracks = [], source = 'none', monochrome = true} = {}) {
     if (active) return;
     if (typeof MediaRecorder === 'undefined' || typeof HTMLCanvasElement.prototype.captureStream !== 'function') throw new Error('This browser cannot record a canvas. Open this page in Chrome.');
     if ([brainCanvas, flyCanvas].some(view => !view || view.hidden || view.style?.display === 'none' || !(view.width > 0 && view.height > 0))) throw new Error('Both 3D views must be available before recording. Reload this page in Chrome with hardware acceleration enabled.');
@@ -75,7 +79,7 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
     context = canvas.getContext('2d', {alpha: false});
     if (!context) throw new Error('A video recording canvas could not be created.');
     const tracks = audioTracks.filter(track => track.kind === 'audio' && track.readyState === 'live');
-    audioSource = tracks.length ? source : 'none'; chunks = []; byteCount = 0; stopping = false; ending = ''; lastSecond = -1;
+    audioSource = tracks.length ? source : 'none'; recordingMonochrome = Boolean(monochrome); chunks = []; byteCount = 0; stopping = false; ending = ''; lastSecond = -1;
     outputStream = canvas.captureStream(30);
     try {
       tracks.forEach(track => {

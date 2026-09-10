@@ -5,7 +5,7 @@ import { createDemoRecorder } from '../ui/recorder.js';
 // Browser boundaries are faked here; the real recorder owns its lifecycle and
 // chooses formats, source tracks, completion messages, and download contents.
 function fixture(context, { format = 'video/webm' } = {}) {
-  const instances = [], downloads = [], blobs = [], changes = [], labels = [];
+  const instances = [], downloads = [], blobs = [], changes = [], labels = [], drawingCalls = [];
   const timers = new Map();
   let clock = 0, nextTimer = 0;
   class Track {
@@ -20,7 +20,13 @@ function fixture(context, { format = 'video/webm' } = {}) {
     addTrack(track) { this.tracks.push(track); }
     getTracks() { return this.tracks; }
   }
-  const drawing = { fillRect() {}, strokeRect() {}, drawImage() {}, fillText(value) { labels.push(value); } };
+  const drawing = {
+    filter: 'none',
+    fillRect(...args) { drawingCalls.push({ type: 'fillRect', filter: this.filter, args }); },
+    strokeRect(...args) { drawingCalls.push({ type: 'strokeRect', filter: this.filter, args }); },
+    drawImage(...args) { drawingCalls.push({ type: 'drawImage', filter: this.filter, args }); },
+    fillText(value) { labels.push(value); drawingCalls.push({ type: 'fillText', filter: this.filter }); },
+  };
   class Canvas {
     constructor() { this.width = 1280; this.height = 720; this.hidden = false; this.style = {}; }
     getContext() { return drawing; }
@@ -70,7 +76,7 @@ function fixture(context, { format = 'video/webm' } = {}) {
     clock += milliseconds;
     for (const [id, timer] of [...timers]) if (timer.due <= clock) { timers.delete(id); timer.callback(); }
   }
-  return { Track, Canvas, create, advance, instances, downloads, blobs, changes, labels };
+  return { Track, Canvas, create, advance, instances, downloads, blobs, changes, labels, drawingCalls };
 }
 
 test('stopping a recording releases its cloned tracks without stopping the shared source', async context => {
@@ -171,5 +177,23 @@ test('a Dark lab take exposes learned-readout scores without claiming biological
   assert.ok(!f.labels.some(label => /BANANA C4|SIX STRINGS|FLY TOMBOLA|AMBIENT SWARM/.test(label)));
   enabled = false; recorder.draw();
   assert.ok(f.labels.includes('FROZEN MUSICAL READOUT'));
+  recorder.stop(); await Promise.resolve();
+});
+
+test('monochrome filters every encoded drawing operation and color can be selected for a later take', async context => {
+  const f = fixture(context), video = { srcObject: {}, readyState: 2, videoWidth: 1200, videoHeight: 800 };
+  const recorder = f.create({ video });
+  recorder.start();
+  assert.ok(f.drawingCalls.length > 0);
+  assert.ok(f.drawingCalls.every(call => call.filter === 'grayscale(1)'), 'text, backgrounds and image pixels all enter the encoded composite in grayscale');
+  assert.equal(f.drawingCalls.filter(call => call.type === 'drawImage').length, 3, 'the shared Live window and both 3D canvases are filtered');
+  assert.ok(f.drawingCalls.some(call => call.type === 'drawImage' && call.args[0] === video));
+  recorder.start({ monochrome: false });
+  f.drawingCalls.length = 0; recorder.draw();
+  assert.ok(f.drawingCalls.every(call => call.filter === 'grayscale(1)'), 'an active take keeps its initial color style');
+  recorder.stop(); await Promise.resolve();
+  f.drawingCalls.length = 0; recorder.start({ monochrome: false });
+  assert.ok(f.drawingCalls.length > 0);
+  assert.ok(f.drawingCalls.every(call => call.filter === 'none'), 'the next take can use original colors');
   recorder.stop(); await Promise.resolve();
 });

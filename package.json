@@ -1,6 +1,6 @@
 {
   "name": "fly-lab",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "private": true,
   "type": "module",
   "description": "A fly motor circuit with a trainable dark ambient readout for Ableton Live.",

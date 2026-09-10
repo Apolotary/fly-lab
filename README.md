@@ -120,6 +120,11 @@ In Chrome, click **Choose Ableton window** and select Live. The left side shows
 the actual Live window; the right side shows fly 01’s measured motor circuit and
 the swarm in the habitat. Drag either 3D view to rotate it.
 
+**Monochrome** is the default: the dashboard and exported video show the Live
+window, 3D views and captions in grayscale. Click **Monochrome** to switch to
+**Color** before recording. The choice stays fixed during a take and does not
+change the simulation, MIDI or sound.
+
 The screen stream stays inside your browser. Enable audio in the sharing picker
 to include Live's sound, then click **Record video** and **Let flies explore**.
 Move or replenish fruit during the take. **Stop & save** downloads a landscape
