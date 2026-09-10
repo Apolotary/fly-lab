@@ -1,9 +1,18 @@
 import { FlyGarden } from './garden.js';
 import { StringComposer } from './string-instrument.js';
+import { FruitComposer } from './fruit-instrument.js';
+
+function makeComposer(mode) {
+  if (!['fruit', 'strings'].includes(mode)) throw new Error('Choose Fruit pads or Strings.');
+  return mode === 'fruit' ? new FruitComposer() : new StringComposer();
+}
 
 export class FlyController {
-  constructor(adapter, { mode = 'demo', world = new FlyGarden(), composer = new StringComposer() } = {}) {
-    Object.assign(this, { adapter, mode, world, composer });
+  constructor(adapter, { mode = 'demo', world = new FlyGarden(), composer, instrumentMode = 'fruit' } = {}) {
+    composer ??= makeComposer(instrumentMode);
+    Object.assign(this, { adapter, mode, world, composer, instrumentMode });
+    this.modeRevision = 0;
+    this.composer.prime?.(this.world.snapshot());
     this.running = false;
     this.busy = false;
     this.error = null;
@@ -12,7 +21,7 @@ export class FlyController {
     this.lastSeen = Date.now();
     this.lastSave = 0;
     this.timer = null;
-    this.addEvent(mode === 'live' ? 'Connected to Live. Prepare the instrument in an empty Set.' : 'Browser rehearsal. Prepare the instrument to hear the string contacts.');
+    this.addEvent(mode === 'live' ? 'Connected to Live. Prepare the instrument in an empty Set.' : 'Browser rehearsal. Each fruit visit can play a note.');
   }
   addEvent(text) {
     this.events.unshift({ time: new Date().toLocaleTimeString('en-GB'), text });
@@ -21,7 +30,7 @@ export class FlyController {
   snapshot() {
     return { mode: this.mode, connection: !this.error, prepared: this.adapter.prepared,
       running: this.running, busy: this.busy, error: this.error,
-      brain: this.world.snapshot(), music: { ...this.adapter.snapshot(), ...this.composer.snapshot() }, events: this.events };
+      brain: this.world.snapshot(), music: { ...this.adapter.snapshot(), ...this.composer.snapshot(), instrumentMode: this.instrumentMode, modeRevision: this.modeRevision }, events: this.events };
   }
   heartbeat() { this.lastSeen = Date.now(); }
   midiFile() { return this.composer.midiFile(); }
@@ -29,7 +38,7 @@ export class FlyController {
     if (this.closing) throw new Error('The fly is shutting down.');
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected an action object.');
     const { action } = input;
-    if (!['prepare', 'start', 'stop', 'panic', 'stimulus', 'fruit', 'clearFruit'].includes(action)) throw new Error('Unknown action.');
+    if (!['prepare', 'start', 'stop', 'panic', 'stimulus', 'fruit', 'clearFruit', 'mode'].includes(action)) throw new Error('Unknown action.');
     if (this.busy && action === 'panic') {
       this.running = false;
       this.adapter.midi?.panic();
@@ -37,6 +46,20 @@ export class FlyController {
       return this.action(input);
     }
     if (this.busy) throw new Error('Still finishing the previous action.');
+    if (action === 'mode') {
+      if (this.running) throw new Error('Pause the flies before changing instruments.');
+      if (!['fruit', 'strings'].includes(input.mode)) throw new Error('Choose Fruit pads or Strings.');
+      if (input.mode === this.instrumentMode) return this.snapshot();
+      const next = makeComposer(input.mode);
+      next.notes = this.composer.notes;
+      next.complete = this.composer.complete;
+      next.prime?.(this.world.snapshot());
+      this.composer = next;
+      this.instrumentMode = input.mode;
+      this.modeRevision++;
+      this.addEvent(input.mode === 'fruit' ? 'Fruit pads: banana C, apple E, grapes G. One note per visit.' : 'Strings selected. Low string contacts play notes; earlier notes are kept.');
+      return this.snapshot();
+    }
     if (action === 'stimulus') { this.world.setStimulus({ drive: input.drive }); return this.snapshot(); }
     if (action === 'fruit') {
       this.world.addFruit({ x: input.x, y: input.y, kind: input.kind });
@@ -54,7 +77,7 @@ export class FlyController {
       await this.pending;
       if (action === 'prepare') {
         await this.adapter.prepare();
-        this.addEvent('Instrument ready at 96 BPM. Keep Live stopped; string contacts play its MIDI input directly.');
+        this.addEvent('Instrument ready. Keep Live stopped; contacts play its MIDI input directly.');
       } else if (action === 'start') {
         if (this.composer.complete) throw new Error('Piece complete. Save MIDI and restart for another piece.');
         await this.adapter.start();
@@ -62,7 +85,7 @@ export class FlyController {
         this.lastSave = 0;
         this.lastTick = Date.now();
         this.heartbeat();
-        this.addEvent('Exploring. Flies touching strings make notes; free flight is silent.');
+        this.addEvent(this.instrumentMode === 'fruit' ? 'Exploring. A fruit visit plays its note; feeding stays quiet afterward.' : 'Exploring. Flies touching strings make notes; free flight is silent.');
       } else {
         try { await this.adapter.recordNotes(this.composer.notes); }
         finally {
@@ -99,9 +122,15 @@ export class FlyController {
     try {
       const elapsed = Math.min(250, Math.max(0, now - (this.lastTick ?? now - 50)));
       this.lastTick = now;
-      this.world.step(elapsed);
-      const notes = this.composer.step(this.world.snapshot());
-      if (notes.length) this.adapter.play(notes);
+      // Sample contacts after each world round, even when a timer wakes late.
+      let remaining = elapsed;
+      do {
+        const step = Math.min(50, remaining);
+        this.world.step(step);
+        const notes = this.composer.step(this.world.snapshot());
+        if (notes.length) this.adapter.play(notes);
+        remaining -= step;
+      } while (remaining > 0 && !this.composer.complete);
       if (this.composer.complete) { this.action({ action: 'stop' }).catch(() => {}); return; }
     } catch (error) { this.pending = this.fail(error); return; }
     if (now - this.lastSave < 2000 || this.saving) return;

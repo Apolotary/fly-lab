@@ -71,6 +71,12 @@ export class StringComposer {
     this.complete = false;
   }
 
+  prime(world) {
+    this.flies.clear();
+    this.lastTime = null;
+    this.step(world);
+  }
+
   step(world) {
     const time = world?.time;
     if (!Number.isFinite(time) || time < 0 || this.complete) return [];
@@ -150,7 +156,7 @@ export class StringComposer {
         if (previous.duration > gap) previous.duration = Math.max(0.001, gap);
       }
       const note = { id: this.notes.length + 1, stringId: string.id, flyId, x, y,
-        pitch: string.pitch, velocity, duration, beat, reason };
+        pitch: string.pitch, velocity, duration, beat, reason, instrumentMode: 'strings' };
       this.notes.push(note);
       created.push(note);
       this.lastGesture = `${string.label} · ${reason.toLowerCase()}`;

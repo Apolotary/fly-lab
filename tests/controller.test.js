@@ -51,7 +51,7 @@ test('timer delays advance elapsed simulation time while capping catch-up work',
   controller.tick(start + 200);
   controller.tick(start + 1200);
   controller.tick(start + 1190);
-  assert.deepEqual(world.elapsed, [50, 150, 250, 0]);
+  assert.deepEqual(world.elapsed, [...Array(9).fill(50), 0]);
   await controller.action({ action: 'stop' });
 });
 
@@ -223,4 +223,49 @@ test('composition completion releases notes and refuses to restart the finished 
   assert.ok(calls.includes('midi:panic'));
   assert.ok(calls.includes('stop'));
   await assert.rejects(controller.action({ action: 'start' }), /Piece complete/);
+});
+
+test('instrument modes change only while paused and preserve notes without phantom fruit touches', async () => {
+  const { adapter } = fixture();
+  const fruit = { id: 'fruit-1', kind: 'banana', x: .5, y: .5, amount: 1 };
+  let time = 0, feeding = false;
+  const world = { snapshot: () => ({ time, fruits: [fruit], flies: [{ id: 'fly-1', x: .5, y: .5, height: 0,
+    speed: 0, behavior: feeding ? 'feeding' : 'seeking', feedingId: feeding ? fruit.id : null }] }) };
+  const controller = new FlyController(adapter, { world });
+  assert.equal(controller.snapshot().music.instrumentMode, 'fruit');
+  time = 1; feeding = true;
+  const [touch] = controller.composer.step(world.snapshot());
+  assert.equal(touch.pitch, 60);
+  const notes = controller.composer.notes;
+  await controller.action({ action: 'mode', mode: 'strings' });
+  assert.equal(controller.composer.notes, notes);
+  await controller.action({ action: 'mode', mode: 'fruit' });
+  assert.equal(controller.snapshot().music.modeRevision, 2);
+  time = 2;
+  assert.deepEqual(controller.composer.step(world.snapshot()), [], 'a held fruit contact must not sound on mode switch');
+  assert.equal(notes.length, 1);
+  feeding = false; time = 3; controller.composer.step(world.snapshot());
+  feeding = true; time = 4;
+  assert.equal(controller.composer.step(world.snapshot()).length, 1);
+  assert.equal(notes.length, 2);
+  const revision = controller.modeRevision;
+  await assert.rejects(controller.action({ action: 'mode', mode: 'unknown' }), /Choose/);
+  await controller.action({ action: 'start' });
+  await assert.rejects(controller.action({ action: 'mode', mode: 'strings' }), /Pause/);
+  assert.equal(controller.modeRevision, revision);
+  await controller.action({ action: 'stop' });
+});
+
+test('delayed timer samples each world round so intermediate string contacts are retained', async () => {
+  const { adapter, calls } = fixture();
+  let index = 0;
+  const positions = [.28, .31, .33, .28];
+  const world = { step() { index++; }, snapshot: () => ({ time: index * .05, x: .5, y: positions[index], height: 0, speed: .08, id: 'fly-1' }) };
+  const controller = new FlyController(adapter, { world, instrumentMode: 'strings' });
+  await controller.action({ action: 'start' });
+  controller.tick(controller.lastTick + 150);
+  await controller.pending;
+  assert.equal(controller.composer.notes.length, 1, 'the path touched a string despite returning to its starting side');
+  assert.equal(calls.filter(call => Array.isArray(call) && call[0] === 'play').length, 1);
+  await controller.action({ action: 'stop' });
 });

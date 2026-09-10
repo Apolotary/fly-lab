@@ -5,7 +5,7 @@
 The local 3D renderer uses [Three.js](https://threejs.org/), version 0.186.0,
 under its MIT License (copyright Three.js authors). Its license notice is
 retained in the compiled browser script and `ui/licenses/three.txt`.
-The flies, guitar, garden and fruit geometry
+The flies, guitar, garden, fruit, wires and virtual MIDI-box geometry
 are original procedural artwork; no models or media from the reference videos
 are copied.
 
@@ -20,8 +20,10 @@ upstream notice is in `src/vendor/desktop-fly/LICENSE`.
 
 Ableton Fly's original wrapper supplies artificial descending-neuron stimulation
 from a seeded, modeled environment. Simulated motor rates gate movement and
-turning; original geometric string-contact tests convert the resulting world state into
-MIDI notes. Each of three flies uses a separate copy of the same measured graph. Its displayed fly illustrates that simulated state. It does not reproduce
+turning. Original feeding-contact rules in Fruit pads mode, or geometric
+string-contact tests in Strings mode, convert the resulting world state into
+MIDI notes. Each of three flies uses a separate copy of the same measured graph,
+with shared fruit. Its displayed fly illustrates that simulated state. It does not reproduce
 DesktopFly's articulated body or its female FlyWire brain model.
 
 ## MaleCNS v1.0 circuit data
@@ -63,7 +65,10 @@ are omitted from the view but retained in the simulation. Point colors show
 modeled firing rates, not recorded activity. Fruit attraction, hunger, feeding,
 rest and flight height are engineered behavior rules. Fruit kinds have equal
 attraction in the model. Olfactory circuitry, biological reward learning and
-musical feedback are not modeled.
+musical feedback are not modeled. Fruit pads maps new feeding visits to authored
+pitches: banana C4 (MIDI 60), apple E4 (64), and grape G4 (67). Strings uses authored
+pitch assignments and geometric contact thresholds. These are musical mappings,
+not measured animal preferences or electrical-conductivity models.
 
 No female FlyWire-derived data (which have different license terms) are bundled.
 The upstream code license's older blanket data note is superseded for this
@@ -92,9 +97,15 @@ into this repository, bundled, uploaded or distributed with MIDI exports. Ableto
 software and factory content retain their respective license terms. This project
 is independent of Ableton.
 
-## Artistic reference
+## Artistic references
 
-The concept is inspired by Céleste Boursier-Mougenot’s *from here to ear*,
+The Strings mode is inspired by Céleste Boursier-Mougenot’s *from here to ear*,
 particularly the [Copenhagen Contemporary installation](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/).
 This project is an independent digital adaptation with original geometry and
 code. No artwork photographs, exhibition recordings or other media are included.
+
+The default Fruit pads mode takes conceptual inspiration from
+[Playtronica's Playtron](https://help.playtronica.com/devices/playtron/), a physical
+touch-to-MIDI instrument for conductive objects. This project's virtual feeding
+contacts, wires and MIDI box use original code and geometry. No Playtron hardware,
+SDK, code, product media or logo is included. The project is independent of Playtronica.

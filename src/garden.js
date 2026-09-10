@@ -37,6 +37,7 @@ export class FlyGarden {
     this.syncFruit();
     this.addFruit({ x: 0.68, y: 0.46, kind: 'banana' });
     this.addFruit({ x: 0.25, y: 0.62, kind: 'apple' });
+    this.addFruit({ x: 0.78, y: 0.30, kind: 'grape' });
     return this.snapshot();
   }
 
@@ -90,6 +91,7 @@ export class FlyGarden {
       x: state.x, y: state.y, heading: state.heading,
       height: state.height, speed: state.speed, turnRate: state.turnRate,
       behavior: state.behavior, gait: state.gait, hunger: state.hunger,
+      feedingId: state.feedingId,
       time: state.time, activity: state.activity,
       landingCount: state.landingCount, visits: state.visits,
       distanceTravelled: state.distanceTravelled,

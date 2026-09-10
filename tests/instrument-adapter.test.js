@@ -6,7 +6,7 @@ import { MAX_BEATS, TEMPO } from '../src/midi-file.js';
 function fixture() {
   const created = [], calls = [];
   const failures = { sampleOnce: false, clipOnce: false };
-  const unrelated = { name: 'Fly Strings', arm: true, mute: false };
+  const unrelated = { name: 'Fly Instrument', arm: true, mute: false };
   let tempo = 120;
   const song = {
     get tracks() { throw new Error('Do not inspect unrelated tracks.'); },
@@ -52,7 +52,7 @@ test('instrument setup creates one owned sample instrument and clip at 96 BPM', 
   await Promise.all([f.adapter.prepare(), f.adapter.prepare()]);
   assert.equal(f.created.length, 1);
   const track = f.created[0];
-  assert.equal(track.name, 'Fly Strings');
+  assert.equal(track.name, 'Fly Instrument');
   assert.equal(track.arm, false);
   assert.equal(track.mute, false);
   assert.equal(track.mixer.volume.value, .62);
@@ -65,7 +65,7 @@ test('instrument setup creates one owned sample instrument and clip at 96 BPM', 
   assert.equal(f.song.tempo, TEMPO);
   assert.equal(f.adapter.prepared, true);
   assert.equal(f.adapter.snapshot().muted, false);
-  assert.deepEqual(f.unrelated, { name: 'Fly Strings', arm: true, mute: false });
+  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
   assert.ok(!JSON.stringify(f.adapter.snapshot()).includes('/local/'));
 });
 

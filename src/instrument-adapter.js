@@ -16,7 +16,7 @@ export class LiveInstrumentAdapter {
     this.record = null;
     this.tail = Promise.resolve();
   }
-  snapshot() { return { tempo: TEMPO, source: 'Fly Strings', midiConnected: Boolean(this.midi?.connected), muted: this.muted }; }
+  snapshot() { return { tempo: TEMPO, source: 'Fly Instrument', midiConnected: Boolean(this.midi?.connected), muted: this.muted }; }
   enqueue(operation) {
     const next = this.tail.then(operation);
     this.tail = next.catch(() => {});
@@ -37,7 +37,7 @@ export class LiveInstrumentAdapter {
         if (!this.record) this.record = { track: await song.createMidiTrack(), device: null, rawDevice: null, sampleReady: false, clip: null };
         const record = this.record;
         song.tempo = TEMPO;
-        record.track.name = 'Fly Strings';
+        record.track.name = 'Fly Instrument';
         record.track.arm = false;
         record.track.mute = true;
         await record.track.mixer.volume.setValue(parameterValue(record.track.mixer.volume, NEUTRAL_LEVEL));
@@ -46,7 +46,7 @@ export class LiveInstrumentAdapter {
         record.track.arm = false;
         if (!record.sampleReady) { await record.device.replaceSample(this.samplePath); record.sampleReady = true; }
         if (!record.clip) record.clip = await record.track.createMidiClip(0, MAX_BEATS);
-        record.clip.name = 'From fruit to ear · string contacts';
+        record.clip.name = 'Ableton Fly · contact notes';
         record.track.arm = false;
         record.track.mute = false;
         this.muted = false;

@@ -24,20 +24,26 @@ The exact packaged demo targets NVIDIA machines: the [brain renderer](https://gi
 Ableton Fly combines [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly)'s
 JavaScript locomotor simulator and MaleCNS extract with
 [Three.js](https://github.com/mrdoob/three.js). An original miniature world supplies
-fruit locations and modeled behavior. Three flies’ low-height string contacts supply
-note events through Apple's CoreMIDI framework.
+fruit locations and modeled behavior. Three flies’ feeding visits in the default
+**Fruit pads** mode, or low-height string contacts in **Strings**, supply note
+events through Apple's CoreMIDI framework. No physical fruit controller is required.
 
 | Part | Implementation in this project |
 | --- | --- |
 | Measured wiring | 1,045 selected neurons, 17,224 directed connections and 708,689 synaptic contacts. MIT simulator code; the particular MaleCNS extract is CC BY 4.0. |
-| Animal world | Original, inexpensive rules for exploration, equal fruit attraction, hunger, feeding, rest and flight height. Actual simulated motor output gates translation and turning. |
-| Visible body | Original articulated Three.js geometry follows the simulated position and illustrates motor activity. String contacts use a geometric body proxy; there are no foot-force or aerodynamic dynamics. |
-| Contact to music | Six strings have fixed pitches. Low-height crossings and landings trigger notes; contact speed affects velocity. Timing is not quantized. |
-| Live instrument | An original Swift bridge supplies live MIDI to an owned Ableton track. Simpler uses a factory acoustic-guitar sample from the local Live installation. No Ableton sample is redistributed. |
+| Animal world | Three independent instances of the measured motor graph share fruit. Original rules supply exploration, equal fruit attraction, hunger, feeding, rest and flight height. Actual simulated motor output gates translation and turning. |
+| Visible body and instrument | Original articulated Three.js flies, fruit, wires, MIDI box and guitar geometry illustrate the simulation and its contacts. There are no electrical, foot-force or aerodynamic dynamics. |
+| Fruit pads (default) | A new feeding visit triggers the fruit's pitch: banana C4/60, apple E4/64, grape G4/67. Holding contact stays silent; leaving and revisiting can retrigger. |
+| Strings | Six strings have fixed pitches. Low-height crossings and landings trigger notes through a geometric body proxy; contact speed affects velocity. |
+| Live instrument | An original Swift bridge supplies live MIDI to an owned Fly Instrument track. Simpler uses a factory acoustic-guitar sample from the local Live installation. The user can replace it with a piano or another instrument. No Ableton sample is redistributed. |
 | Reusable performance | Notes accumulate in an arrangement clip at 96 BPM and can be exported as a standard MIDI file. The browser-only preview uses an original synthesized sound. |
 
 This setup runs without a Python physics environment or GPU training job. It is
 an animal-driven virtual instrument: the software author chooses geometry, tuning and contact sensitivity.
+Mode switching is available while paused. It preserves recorded notes and resets
+the contact baseline, so an already-feeding fly does not retrigger on switching.
+Contact timing is unquantized in both modes; the mode changes MIDI generation,
+not the selected Live instrument.
 There is no musical reward, audio understanding, learned composition, or modeled
 fruit preference. Fruit location changes the artificial input and resulting
 movement; banana, apple and grape have equal attraction in these toy rules.
@@ -48,8 +54,10 @@ to a nerve-cord-dominated subset. Full scientific limits and data provenance are
 in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). DesktopFly's older female
 FlyWire data has different, noncommercial terms and is not included here.
 
-See [the artistic precedents](INSPIRATION.md) for animal behavior and gesture
-mapping used as musical material.
+See [the artistic precedents](INSPIRATION.md), including Céleste Boursier-Mougenot's
+*from here to ear* and [Playtronica's touch-to-MIDI fruit instrument](https://help.playtronica.com/devices/playtron/).
+These are conceptual references; the project includes no Playtron hardware,
+electrical-conductivity model, copied device code or media.
 
 ## Useful alternatives
 

@@ -34,7 +34,9 @@ function surface(canvas, distance = 7, orthographic = false) {
         if (object.geometry) geometries.add(object.geometry);
         if (object.material) (Array.isArray(object.material) ? object.material : [object.material]).forEach(m => materials.add(m));
       });
-      geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); renderer.dispose();
+      const textures = new Set();
+      materials.forEach(m => { if (m.map) textures.add(m.map); });
+      geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => t.dispose()); renderer.dispose();
     },
   };
 }
@@ -116,6 +118,8 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   const direction = new THREE.Vector3();
   function connect(o, a, b) { direction.subVectors(b, a); o.position.copy(a).add(b).multiplyScalar(.5); o.scale.set(o.userData.radius, direction.length(), o.userData.radius); o.quaternion.setFromUnitVectors(UP, direction.normalize()); }
   const stage = new THREE.Group(); scene.add(stage);
+  const stringStage = new THREE.Group(), gardenStage = new THREE.Group();
+  stage.add(stringStage, gardenStage);
   // A deliberately broad, original six-string instrument: every sounding
   // segment occupies the same normalized world coordinates as contact detection.
   const WORLD = 6.6;
@@ -131,48 +135,59 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   bodyShape.bezierCurveTo(-.13, 2.14, .60, 2.25, 1.05, 1.50);
   bodyShape.closePath();
   const bodyGeometry = new THREE.ExtrudeGeometry(bodyShape, { depth: .20, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: .065, bevelThickness: .035, curveSegments: 30 });
-  const body = mesh(bodyGeometry, maple, stage); body.rotation.x = -Math.PI / 2; body.position.y = -.23;
-  box(stage, rosewood, [1.56, -.055, 0], [2.55, .11, 2.88]);
-  const headstock = box(stage, maple, [3.05, -.07, 0], [.70, .14, 3.07]); headstock.rotation.y = -.035;
+  const body = mesh(bodyGeometry, maple, stringStage); body.rotation.x = -Math.PI / 2; body.position.y = -.23;
+  box(stringStage, rosewood, [1.56, -.055, 0], [2.55, .11, 2.88]);
+  const headstock = box(stringStage, maple, [3.05, -.07, 0], [.70, .14, 3.07]); headstock.rotation.y = -.035;
   for (let i = 0; i < 6; i++) {
     const x = .49 + i * .33;
-    line(stage, [[x, .004, -1.40], [x, .004, 1.40]], 0x95968a, .68);
+    line(stringStage, [[x, .004, -1.40], [x, .004, 1.40]], 0x95968a, .68);
   }
   for (const z of [-1.22, -.72, -.22, .28, .78, 1.28]) {
-    ellipsoid(stage, pale, [3.30, .04, z], [.12, .07, .085]);
+    ellipsoid(stringStage, pale, [3.30, .04, z], [.12, .07, .085]);
   }
-  const soundHole = mesh(new THREE.CircleGeometry(.64, 40), black, stage); soundHole.rotation.x = -Math.PI / 2; soundHole.position.set(-1.22, .014, 0);
-  for (const radius of [.68, .72]) { const ring = mesh(new THREE.TorusGeometry(radius, .016, 4, 50), rosewood, stage); ring.rotation.x = Math.PI / 2; ring.position.set(-1.22, .018, 0); }
-  box(stage, rosewood, [worldToScene(.12), .012, 0], [.16, .045, 2.94]);
-  box(stage, pale, [worldToScene(.88), .012, 0], [.055, .045, 2.83]);
+  const soundHole = mesh(new THREE.CircleGeometry(.64, 40), black, stringStage); soundHole.rotation.x = -Math.PI / 2; soundHole.position.set(-1.22, .014, 0);
+  for (const radius of [.68, .72]) { const ring = mesh(new THREE.TorusGeometry(radius, .016, 4, 50), rosewood, stringStage); ring.rotation.x = Math.PI / 2; ring.position.set(-1.22, .018, 0); }
+  box(stringStage, rosewood, [worldToScene(.12), .012, 0], [.16, .045, 2.94]);
+  box(stringStage, pale, [worldToScene(.88), .012, 0], [.055, .045, 2.83]);
+  // An original virtual touch instrument: a simple tray, colored patch leads,
+  // and a small MIDI box. Wires illustrate mappings, not electrical physics.
+  box(gardenStage, material(0x26352d), [0, -.14, 0], [6.85, .28, 6.85]);
+  for (const z of [-3.42, 3.42]) box(gardenStage, material(0x485046), [0, -.01, z], [6.96, .10, .06]);
+  for (const x of [-3.45, 3.45]) box(gardenStage, material(0x485046), [x, -.01, 0], [.06, .10, 6.90]);
+  const midiBox = box(gardenStage, material(0x879491, {roughness: .45, metalness: .35}), [3.79, -.025, 2.34], [.62, .44, 1.40]);
+  box(gardenStage, black, [3.79, .201, 2.34], [.49, .012, 1.21]);
+  const midiLED = ellipsoid(gardenStage, material(0x90bf95, {emissive: 0x76ff95, emissiveIntensity: .16}), [3.80, .22, 1.88], [.047, .02, .047]);
+  for (let i = 0; i < 6; i++) ellipsoid(gardenStage, dark, [3.475, .04, 1.96 + i * .135], [.025, .036, .036]);
+  line(gardenStage, [[4.10,.0,2.34],[4.32,-.1,2.34],[4.34,-.15,3.45]], 0x718482);
+  function labelSprite(text, color = '#d7e5d4') {
+    const label = document.createElement('canvas'); label.width = 192; label.height = 72;
+    const context = label.getContext('2d');
+    context.fillStyle = '#101913'; context.beginPath(); context.roundRect(8, 8, 176, 56, 9); context.fill();
+    context.font = '500 34px ui-monospace, Menlo, monospace'; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillStyle = color; context.fillText(text, 96, 37);
+    const texture = new THREE.CanvasTexture(label); texture.colorSpace = THREE.SRGBColorSpace;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, depthWrite: false}));
+    sprite.scale.set(.94, .35, 1); return sprite;
+  }
+  const midiLabel = labelSprite('MIDI', '#b8ddc8'); midiLabel.scale.set(.65, .245, 1); midiLabel.position.set(3.79, .54, 2.39); gardenStage.add(midiLabel);
   // Contact highlights are driven only by composer contact events. Their
   // illustrated vibration is decorative, not a simulated acoustic waveform.
   const fallbackStrings = [.30, .38, .46, .54, .62, .70].map((y, i) => ({ id: `string-${i + 1}`, x1: .12, x2: .88, y, pitch: [48, 55, 60, 64, 67, 72][i] }));
   const stringObjects = new Map(), seenContacts = new Set(), strikeColor = new THREE.Color(0xffedb9);
-  let previousContactCount = null;
+  let previousContactCount = null, previousMode = null, previousModeRevision = null, midiStruck = -100;
   function createString(spec, index) {
     const positions = new Float32Array(41 * 3), geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const stringMaterial = new THREE.LineBasicMaterial({color: index < 3 ? 0x51564f : 0x68736f, transparent: true, opacity: .9});
-    const object = new THREE.Line(geometry, stringMaterial); stage.add(object);
-    const halo = mesh(new THREE.RingGeometry(.10, .14, 24), new THREE.MeshBasicMaterial({color: 0xf5d995, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false}), stage);
+    const object = new THREE.Line(geometry, stringMaterial); stringStage.add(object);
+    const halo = mesh(new THREE.RingGeometry(.10, .14, 24), new THREE.MeshBasicMaterial({color: 0xf5d995, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false}), stringStage);
     halo.rotation.x = -Math.PI / 2; halo.position.y = .06;
     return {spec, object, geometry, positions, material: stringMaterial, baseColor: stringMaterial.color.clone(), halo, struck: -100, contactX: .5};
   }
   function updateStrings(music, now) {
     const specs = Array.isArray(music.strings) && music.strings.length ? music.strings : fallbackStrings;
     const ids = new Set(specs.map(spec => spec.id));
-    for (const [id, item] of stringObjects) if (!ids.has(id)) { stage.remove(item.object, item.halo); item.geometry.dispose(); item.material.dispose(); item.halo.geometry.dispose(); item.halo.material.dispose(); stringObjects.delete(id); }
+    for (const [id, item] of stringObjects) if (!ids.has(id)) { stringStage.remove(item.object, item.halo); item.geometry.dispose(); item.material.dispose(); item.halo.geometry.dispose(); item.halo.material.dispose(); stringObjects.delete(id); }
     specs.forEach((spec, index) => { if (!stringObjects.has(spec.id)) stringObjects.set(spec.id, createString(spec, index)); stringObjects.get(spec.id).spec = spec; });
-    if (previousContactCount !== null && (music.noteCount ?? 0) < previousContactCount) seenContacts.clear();
-    previousContactCount = music.noteCount ?? 0;
-    for (const contact of Array.isArray(music.contacts) ? music.contacts : []) {
-      const key = contact.id ?? [contact.stringId, contact.flyId, contact.time].join(':');
-      if (seenContacts.has(key)) continue;
-      seenContacts.add(key); if (seenContacts.size > 256) seenContacts.delete(seenContacts.values().next().value);
-      const item = stringObjects.get(contact.stringId);
-      if (item) { item.struck = now; item.contactX = clamp(contact.x ?? .5); }
-    }
     for (const item of stringObjects.values()) {
       const {spec, positions} = item, age = now - item.struck, envelope = Math.exp(-age * 5.5), y = Number.isFinite(spec.y) ? spec.y : spec.y1;
       const x1 = worldToScene(spec.x1), x2 = worldToScene(spec.x2), z = worldToScene(y);
@@ -207,21 +222,81 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     fruitTemplates.set(kind, group);
   }
   const fruitObjects = new Map();
-  function updateFruit(fruits) {
+  const fruitColors = {banana: 0xe4c45b, apple: 0xe97761, grape: 0xa98bdb};
+  const fallbackFruitNotes = {banana: {pitch: 60, label: 'C4'}, apple: {pitch: 64, label: 'E4'}, grape: {pitch: 67, label: 'G4'}};
+  function disposeFruit(item) {
+    stage.remove(item.object); gardenStage.remove(item.wire);
+    item.materials.forEach(m => m.dispose()); item.halo.geometry.dispose(); item.halo.material.dispose();
+    item.label.material.map.dispose(); item.label.material.dispose(); item.wire.geometry.dispose(); item.wire.material.dispose();
+  }
+  function createFruit(item, noteLabel) {
+    const object = new THREE.Group(), model = (fruitTemplates.get(item.kind) || fruitTemplates.get('banana')).clone(true);
+    const materials = [];
+    model.traverse(child => {if (child.isMesh) {child.material = child.material.clone(); materials.push(child.material);}});
+    object.add(model); stage.add(object);
+    const color = fruitColors[item.kind] ?? 0x99c9b1;
+    const halo = mesh(new THREE.RingGeometry(.32, .36, 36), new THREE.MeshBasicMaterial({color, transparent: true, opacity: .28, side: THREE.DoubleSide, depthWrite: false}), object);
+    halo.rotation.x = -Math.PI / 2; halo.position.y = .02;
+    const label = labelSprite(noteLabel); label.position.set(0, .88, 0); object.add(label);
+    const wire = line(gardenStage, [[0,0,0],[0,0,0]], color, .67);
+    return {object, model, materials, halo, label, labelText: noteLabel, wire, color: new THREE.Color(color), kind: item.kind, pathKey: '', struck: -100};
+  }
+  function updateFruit(fruits, music, fruitMode, now) {
     const ids = new Set();
-    for (const item of fruits) {
+    for (const [index, item] of fruits.entries()) {
       ids.add(item.id);
-      let object = fruitObjects.get(item.id);
-      if (!object || object.userData.kind !== item.kind) {
-        if (object) stage.remove(object);
-        object = (fruitTemplates.get(item.kind) || fruitTemplates.get('banana')).clone(true);
-        object.userData.kind = item.kind; fruitObjects.set(item.id, object); stage.add(object);
+      const note = music.fruitNotes?.[item.kind] ?? fallbackFruitNotes[item.kind], noteLabel = note?.label ?? 'NOTE';
+      let visual = fruitObjects.get(item.id);
+      if (!visual || visual.kind !== item.kind || visual.labelText !== noteLabel) {
+        if (visual) disposeFruit(visual);
+        visual = createFruit(item, noteLabel); fruitObjects.set(item.id, visual);
       }
-      object.position.set(worldToScene(item.x), .015, worldToScene(item.y));
-      object.scale.setScalar(.35 + Math.sqrt(clamp(item.amount ?? 1)) * .65);
+      const {object, model, halo, label, wire} = visual, x = worldToScene(item.x), z = worldToScene(item.y);
+      object.position.set(x, .015, z);
       object.visible = (item.amount ?? 1) > .005;
+      const age = Math.max(0, now - visual.struck), pulse = Math.exp(-age * 5.5);
+      model.scale.setScalar((.35 + Math.sqrt(clamp(item.amount ?? 1)) * .65) * (fruitMode && !reducedMotion ? 1 + pulse * .075 : 1));
+      label.visible = halo.visible = fruitMode;
+      halo.material.opacity = .18 + pulse * .78; halo.scale.setScalar(1 + pulse * .6);
+      visual.materials.forEach(m => {m.emissive.copy(visual.color); m.emissiveIntensity = fruitMode ? pulse * .45 : 0;});
+      wire.visible = fruitMode && object.visible;
+      wire.material.color.copy(visual.color).lerp(strikeColor, pulse); wire.material.opacity = .53 + pulse * .47;
+      const portZ = 1.96 + (index % 6) * .135, pathKey = `${x}:${z}:${portZ}`;
+      if (pathKey !== visual.pathKey) {
+        const points = [new THREE.Vector3(x,.055,z), new THREE.Vector3(x + .25,.05,z + .20), new THREE.Vector3((x + 3.45) * .5,.025,(z + portZ) * .5 + .30), new THREE.Vector3(3.25,.025,portZ), new THREE.Vector3(3.48,.04,portZ)];
+        const geometry = new THREE.BufferGeometry().setFromPoints(new THREE.CatmullRomCurve3(points).getPoints(32));
+        wire.geometry.dispose(); wire.geometry = geometry; visual.pathKey = pathKey;
+      }
     }
-    for (const [id, object] of fruitObjects) if (!ids.has(id)) { stage.remove(object); fruitObjects.delete(id); }
+    for (const [id, object] of fruitObjects) if (!ids.has(id)) { disposeFruit(object); fruitObjects.delete(id); }
+  }
+  const contactKey = contact => `${contact.instrumentMode ?? (contact.fruitId ? 'fruit' : 'strings')}:${contact.id ?? [contact.fruitId ?? contact.stringId, contact.flyId, contact.time].join(':')}`;
+  function beginContacts(music, mode) {
+    const contacts = Array.isArray(music.contacts) ? music.contacts : [];
+    const revision = music.modeRevision ?? 0;
+    const baseline = previousMode !== mode || previousModeRevision !== revision || (previousContactCount !== null && (music.noteCount ?? 0) < previousContactCount);
+    if (baseline) {
+      // A mode change keeps the piece. Its old contact log is a baseline, not a
+      // new set of touches to animate on the newly selected instrument.
+      seenContacts.clear(); contacts.forEach(contact => seenContacts.add(contactKey(contact)));
+      stringObjects.forEach(item => item.struck = -100); fruitObjects.forEach(item => item.struck = -100); midiStruck = -100;
+    }
+    previousMode = mode; previousModeRevision = revision; previousContactCount = music.noteCount ?? 0;
+  }
+  function updateContacts(music, now, mode) {
+    const contacts = Array.isArray(music.contacts) ? music.contacts : [];
+    for (const contact of contacts) {
+      const key = contactKey(contact); if (seenContacts.has(key)) continue;
+      seenContacts.add(key); if (seenContacts.size > 256) seenContacts.delete(seenContacts.values().next().value);
+      const contactMode = contact.instrumentMode ?? (contact.fruitId ? 'fruit' : 'strings');
+      if (contactMode !== mode) continue;
+      if (mode === 'fruit') {
+        const item = fruitObjects.get(contact.fruitId); if (item) {item.struck = now; midiStruck = now;}
+      } else {
+        const item = stringObjects.get(contact.stringId); if (item) {item.struck = now; item.contactX = clamp(contact.x ?? .5);}
+      }
+    }
+    midiLED.material.emissiveIntensity = .16 + Math.exp(-(now - midiStruck) * 6) * 2.2;
   }
   const placement = mesh(new THREE.RingGeometry(.20, .24, 28), new THREE.MeshBasicMaterial({color:0xe4c45b,side:THREE.DoubleSide,transparent:true,opacity:.75,depthWrite:false}),stage);
   placement.rotation.x = -Math.PI / 2; placement.position.y = .03; placement.visible = false;
@@ -336,8 +411,12 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
           w.pivot.rotation.z = w.side * (.045 + beat); w.pivot.rotation.y = w.side * (flying ? -.2 : -.4);
         });
       });
-      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : []);
-      updateStrings(music, now);
+      const mode = music.instrumentMode === 'strings' ? 'strings' : 'fruit';
+      stringStage.visible = mode === 'strings'; gardenStage.visible = mode === 'fruit';
+      beginContacts(music, mode);
+      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode === 'fruit', now);
+      if (mode === 'strings') updateStrings(music, now);
+      updateContacts(music, now, mode);
       view.render();
     },
     dispose() {

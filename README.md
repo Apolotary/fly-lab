@@ -1,14 +1,19 @@
 # ableton-fly
 
-**From fruit to ear. Three flies, six strings, Ableton.**
+**From fruit to ear. Three flies, a fruit instrument, Ableton.**
 
-Three simulated fruit flies explore a miniature guitar habitat. They walk, fly,
-seek fruit and feed. A fly crossing a string near the surface or landing on it
-triggers a MIDI note in Ableton Live. The touched string flashes so you can see
-what made the sound. Moving fruit changes where the flies go.
+Three simulated fruit flies explore a small habitat. They walk, fly, seek fruit
+and feed. In the default **Fruit pads** mode, beginning to feed plays the fruit's
+MIDI note in Ableton Live. Original wires connect the fruit to a virtual MIDI box,
+and the touched fruit's note label flashes. Moving fruit changes the performance.
 
-Inspired by Céleste Boursier-Mougenot’s **from here to ear**, in which zebra
-finches move freely and make sound by touching amplified guitar strings.
+The fruit instrument takes inspiration from [Playtronica's Playtron](https://help.playtronica.com/devices/playtron/),
+which connects conductive objects to MIDI through human touch. Here, simulated
+feeding contacts trigger notes; no physical hardware or electrical conductivity
+is modeled.
+
+The preserved **Strings** mode is inspired by Céleste Boursier-Mougenot’s
+**from here to ear**, in which zebra finches move freely and make sound by touching amplified guitar strings.
 [Copenhagen Contemporary’s exhibition description](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/)
 is the reference for this independent digital adaptation. No exhibition images,
 recordings, or models are copied.
@@ -32,24 +37,29 @@ Extensions-compatible Ableton Live Suite beta, and your own
    opens Chrome when installed, with your default browser as a fallback.
 4. In Live’s **Tempo & MIDI** settings, enable **Track** for **Ableton Fly** if it
    is not already enabled. Close Settings afterward so the beta can continue.
-5. Click **Prepare instrument**. This creates one **Fly Strings** MIDI track,
+5. Click **Prepare instrument**. This creates one **Fly Instrument** MIDI track,
    loads a local factory acoustic-guitar sample into Simpler, and creates an
-   arrangement clip for the performance.
+   arrangement clip named **Ableton Fly · contact notes** for the performance.
 6. Keep Live’s transport **stopped**, then click **Let flies explore**.
 
 Choose Banana, Apple or Grape, then click the habitat to place fruit. Up to six
 pieces share the space. **Clear** removes the fruit. The flies continue exploring.
-Their string contacts play Live’s MIDI input immediately. The instrument is
+Their feeding contacts play Live’s MIDI input immediately. The instrument is
 armed for monitoring; the extension does not start the transport or global recording.
+
+**Fruit pads** is selected by default. Pause to switch between **Fruit pads** and
+**Strings**. Switching keeps the recorded notes and establishes a fresh contact
+baseline: a fly already feeding does not make a new note simply because the mode
+changed. The mode changes what triggers MIDI, while the Live instrument stays the same.
 
 **Pause** releases notes and disarms the track. Press **Play in Live from bar 1**
 to replay its recorded clip. Stop the transport before resuming the flies.
-**Save MIDI** exports the performance, including its timing and tempo.
+**Save MIDI** exports `ableton-fly.mid`, including its timing and tempo.
 **Panic** or Escape releases notes and mutes the owned track; Start unmutes it.
 Closing the dashboard pauses the flies after ten seconds.
 
-To hear a piano instead, replace the Fly Strings instrument in Live with a piano
-preset. The same string contacts play that instrument. Pause before editing it.
+To hear a piano instead, replace the Fly Instrument instrument in Live with a piano
+preset. Both contact modes can play it. Pause before editing the instrument.
 
 Preparation creates a single owned track per running extension. Restarting the
 extension and preparing again creates a new track. For another take, pause,
@@ -69,20 +79,28 @@ also lets you place the habitat beside native Live without window sharing.
 
 ## What makes a note?
 
-The six visible strings have fixed pitches: C3, G3, C4, E4, G4 and C5 in scientific
-pitch notation (MIDI 48, 55, 60, 64, 67 and 72). Live’s octave labels differ.
+**Fruit pads** maps banana to C4 (MIDI 60), apple to E4 (64), and grape to G4 (67).
+These are scientific pitch labels; Live's octave labels differ. Each fly's new
+feeding visit produces one attack. Continuing to feed stays silent. Leaving and
+revisiting the fruit can trigger another note. Passing nearby or flying above
+fruit does not play it.
+
+**Strings** uses six visible strings with fixed pitches: C3, G3, C4, E4, G4 and C5
+(MIDI 48, 55, 60, 64, 67 and 72).
 
 - Crossing a finite string near the surface, or descending onto it, creates a note.
 - Touch speed affects note strength. Holding still on a string does not repeat notes.
-- Flight above the strings is silent. There are no automatic turns, landing chords,
-  rhythmic backing tracks or notes generated from horizontal position alone.
-- Contacts retain their timing; they are not snapped to an eighth-note grid.
-  96 BPM is the clip/export time reference. Capture stops at 128 bars or the note limit.
+- Flight above the strings is silent.
 
-Contacts use simple geometric tests against the displayed string segments and a
+String contacts use simple geometric tests against the displayed segments and a
 small height threshold. They approximate body contact; they do not solve leg
-forces, string mechanics or aerodynamics. Pitches, tuning, sensitivity and sound
-are instrument-design choices. This is a toy virtual installation.
+forces, string mechanics or aerodynamics. Fruit contacts come from the modeled
+feeding state. Pitches, sensitivity and sound are instrument-design choices.
+This is a toy virtual installation.
+
+Both modes preserve contact timing rather than snapping notes to a musical grid.
+There are no automatic turns, landing chords or backing tracks. 96 BPM is the
+clip/export time reference. Capture stops at 128 bars or the note limit.
 
 Each fly runs an independent copy of DesktopFly’s **1,045-neuron MaleCNS motor
 subset**, with **17,224 directed connections** and **708,689 synaptic contacts**.
@@ -102,7 +120,7 @@ See [the artistic inspiration](docs/INSPIRATION.md),
 
 Suggested caption:
 
-> Inspired by from here to ear: three simulated flies touch virtual strings and play Ableton.
+> Three simulated flies go looking for fruit. The fruit plays Ableton.
 
 ## Development and preview
 

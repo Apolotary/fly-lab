@@ -25,7 +25,7 @@ async function fixture(context) {
   const calls = [];
   const adapter = {
     prepared: true,
-    snapshot: () => ({ tempo: 96, source: 'Fly Strings' }),
+    snapshot: () => ({ tempo: 96, source: 'Fly Instrument' }),
     async prepare() { calls.push('prepare'); },
     async start() { calls.push('start'); },
     async recordNotes() { calls.push('record'); },
@@ -102,7 +102,7 @@ test('MIDI export requires the local token and returns the exact generated binar
   const midi = await download({ 'X-Fly-Token': token });
   assert.equal(midi.status, 200);
   assert.equal(midi.headers['content-type'], 'audio/midi');
-  assert.equal(midi.headers['content-disposition'], 'attachment; filename=from-fruit-to-ear.mid');
+  assert.equal(midi.headers['content-disposition'], 'attachment; filename=ableton-fly.mid');
   assert.equal(midi.headers['cache-control'], 'no-store');
   assert.deepEqual(midi.bytes, composer.midiFile());
   assert.equal(midi.bytes.toString('ascii', 0, 4), 'MThd');

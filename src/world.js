@@ -207,6 +207,7 @@ export class FlyWorld {
       x: this.x, y: this.y, heading: this.heading,
       height: this.height, speed: this.speed, turnRate: this.turnRate,
       behavior: this.behavior, hunger: this.hunger,
+      feedingId: this.behavior === 'feeding' ? this.feedingId : null,
       gait: this.gait,
       fruits: this.fruits.map((fruit) => ({ ...fruit })),
       visits: this.visits, landingCount: this.landingCount,
