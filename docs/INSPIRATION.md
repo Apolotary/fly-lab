@@ -6,11 +6,13 @@ guitars and basses; their contact with the strings generated sound as they moved
 freely. Visitors’ presence also changed the birds’ behavior.
 [Primary exhibition description](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/).
 
-Our independent digital adaptation uses three simulated flies, a shared fruit
-habitat and two contact instruments. **Fruit pads**, the default, makes a new
-feeding visit audible. **Strings** retains six virtual strings that play when a
-fly crosses or lands on one near the surface. Ableton supplies the instrument
-sound. Free flight creates no notes. This carries over the idea of
+Our independent digital adaptation now starts with twelve simulated flies in a
+shared fruit habitat. **Ambient**, the default, gives them an authored musical
+foundation to influence through their collective movement and fruit visits.
+**Fruit pads** makes a new feeding visit audible, while **Strings** retains six
+virtual strings that play when a fly crosses or lands on one near the surface.
+Those two contact-only modes remain silent during free flight. Ableton supplies
+the instrument sound. This carries over the idea of
 an environment that makes ordinary behavior audible. It does not reproduce the
 original work’s living animals, acoustic response, scale or recordings.
 
@@ -39,17 +41,20 @@ play guitars.
 
 ## The inexpensive implementation
 
-The project combines a small spiking motor circuit with a simple virtual
-environment and contact-to-note mappings:
+The project combines independent copies of a small spiking motor circuit with a
+simple shared environment and musical mappings:
 
 ```text
 fruit locations + exploration rules
         ↓ artificial descending input
-three independent measured motor circuits
+twelve independent copies of one measured motor circuit
         ↓ simulated motor activity gates movement
 virtual movement + feeding behavior
-        ↓ chosen contact mode
-fruit feeding visit OR low string contact → MIDI → Ableton instrument
+        ↓ chosen musical mode
+Ambient: collective movement + fruit visits → authored bed + modulation
+Fruit pads / Strings: feeding visit OR low string contact → MIDI notes
+        ↓
+one Ableton instrument track
 ```
 
 The measured wiring comes from the MaleCNS locomotor subset distributed by
@@ -66,6 +71,19 @@ the artificial input, trajectory and resulting notes; it cannot demonstrate a
 real fly's favorite fruit or an acquired taste for the instrument. No musical reward is
 fed back into the circuit.
 
+In **Ambient**, Cmaj9 → Am9 → Fmaj9 → G6/9 is an authored progression. Chords last
+sixteen beats and soft attacks occur every four beats. Collective movement
+influences brightness, note density, space and pan, while new fruit visits add
+bell-like accents. The slow foundation continues during stillness. The flies
+perform changes to a designed piece; the model does not learn its harmony or
+understand the resulting audio.
+
+The ambient waveform is synthesized locally from original project code and
+played through Simpler with Live's native Reverb. No recorded ambient music or
+third-party ambient samples are bundled. The MIDI bridge uses one port and
+channel 1; additional hardware and MIDI drivers are unnecessary. Warm lower tones
+and brighter upper-register chimes come from the same sample and instrument.
+
 In **Fruit pads**, banana plays C4 (MIDI 60), apple E4 (64), and grape G4 (67).
 Each new feeding visit plays once; holding that feeding contact stays silent.
 After leaving, a later visit can play again. The labels use scientific pitch
@@ -77,11 +95,33 @@ stationary fly does not repeatedly pluck a string. The geometry, tuning and
 sensitivity are authored choices, and the body-contact test is a simple proxy,
 not a biomechanical or string-force simulation.
 
-Both modes retain unsnapped contact timing. Switching modes is allowed only while
+Fruit pads and Strings retain unsnapped contact timing. Switching modes is allowed only while
 paused, preserves recorded notes, and establishes a fresh contact baseline. A
 fly already feeding will not retrigger merely because the mode changed. The
-mode does not replace the Live instrument: the default remains a local factory
-acoustic-guitar sample, which the user can replace with a piano or another preset.
+mode also configures the sound: Ambient uses the original synthesized sample and
+movement modulation; Fruit pads and Strings use a local factory acoustic-guitar
+sample. The user can replace the latter with a piano for a contact-only piece.
+Notes are stored in the clip; MIDI export also includes tempo. Live filter, pan
+and Reverb changes require audio/video capture to preserve the performed sound.
+MIDI replay uses the current instrument parameters.
+
+## What the anatomical view shows
+
+Every fly uses the same measured MaleCNS wiring, with independent model state and
+seeded stimulation. Increasing the swarm to twelve does not add twelve different
+connectome specimens. The displayed anatomy belongs to fly 01 only: 880 measured
+soma positions, with 165 unlocated neurons still included in its 1,045-neuron
+simulation. Colors follow that model's firing activity. This is a locomotor
+subset dominated by nerve-cord neurons, not a complete brain reconstruction or
+recorded biological activity.
+
+The branching appearance of some other demos comes from different geometry.
+[Flyhard's renderer](https://github.com/MarkUnthank/flyhard/blob/main/src/flyhard/cns_view.py)
+uses PyVista/VTK to draw actual neuron skeletons and faint neuropil surfaces,
+colored by recorded model states. Our original Three.js view draws cell-body
+positions without neurite arbors. A more detailed appearance would require those
+additional anatomical assets; changing the dots into invented branches would
+not add measured anatomy.
 
 ## Open-source alternatives for a more detailed body
 

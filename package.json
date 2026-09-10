@@ -1,9 +1,9 @@
 {
   "name": "ableton-fly",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
-  "description": "Three simulated flies turn fruit visits or virtual string contacts into Ableton MIDI.",
+  "description": "A simulated fly garden performs an ambient Ableton piece through movement and fruit visits.",
   "license": "MIT",
   "engines": {
     "node": ">=24.16.0"

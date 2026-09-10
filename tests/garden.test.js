@@ -113,7 +113,7 @@ test('walking and flying bouts occur with no fruit or musical feedback', () => {
 
 test('garden validates frame times, seeds and independent injected worlds', () => {
   assert.throws(() => new FlyGarden({ seed: NaN }), /finite/);
-  assert.throws(() => new FlyGarden({ worlds: [] }), /three/);
+  assert.throws(() => new FlyGarden({ worlds: [] }), /one to twelve/);
   const world = new FlyWorld({ brain: mockBrain() });
   assert.throws(() => new FlyGarden({ worlds: [world, world, world] }), /independent/);
   const garden = cheapGarden();
@@ -121,4 +121,31 @@ test('garden validates frame times, seeds and independent injected worlds', () =
   assert.throws(() => garden.setStimulus({ drive: NaN }), /finite/);
   garden.setStimulus({ drive: 0.15 });
   assert.ok(garden.worlds.every((world) => world.driveOverride === 0.15));
+});
+
+test('one to twelve flies have independent measured graphs and compact detached snapshots', () => {
+  const garden = new FlyGarden({ count: 12, seed: 19 });
+  assert.equal(new Set(garden.worlds.map(world => world.brain.sim)).size, 12);
+  const original = new FlyGarden({ seed: 19 });
+  assert.deepEqual(garden.snapshot().flies.slice(0, 3), original.snapshot().flies);
+  const state = run(garden, 1000);
+  assert.equal(state.flyCount, 12);
+  assert.equal(state.flies.length, 12);
+  assert.equal(state.nodes.length, 1045);
+  assert.ok(state.flies.every(fly => fly.distanceTravelled > 0 && fly.nodes === undefined));
+  assert.equal(new Set(state.flies.map(fly => JSON.stringify(fly.activity))).size, 12);
+  const expectedFlies = structuredClone(state.flies);
+  state.flies[4].activity.fill(-100);
+  assert.ok(garden.snapshot().flies[4].activity.every(value => value >= 0));
+  garden.reset();
+  assert.deepEqual(run(garden, 1000).flies, expectedFlies);
+  assert.equal(new FlyGarden({ count: 1 }).snapshot().flyCount, 1);
+});
+
+test('garden rejects invalid counts and separately wrapped worlds sharing one brain', () => {
+  for (const count of [0, 13, 1.5, NaN, Infinity, null, '3']) assert.throws(() => new FlyGarden({ count }), /integer between 1 and 12/);
+  const brain = mockBrain();
+  const worlds = [1, 2].map(seed => new FlyWorld({ seed, brain }));
+  assert.throws(() => new FlyGarden({ worlds }), /independent world and motor circuit/);
+  assert.throws(() => new FlyGarden({ worlds: [worlds[0]], count: 2 }), /match/);
 });

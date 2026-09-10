@@ -55,6 +55,49 @@ test('timer delays advance elapsed simulation time while capping catch-up work',
   await controller.action({ action: 'stop' });
 });
 
+test('ambient performance time follows a delayed timer, freezes on pause, and survives mode changes', async context => {
+  let now = 10_000;
+  context.mock.method(Date, 'now', () => now);
+  const { adapter, world } = fixture();
+  const controller = new FlyController(adapter, { world, instrumentMode: 'ambient', mode: 'live' });
+  await controller.action({ action: 'start' });
+
+  now += 2500;
+  controller.tick();
+  await controller.pending;
+  assert.deepEqual(world.elapsed, Array(5).fill(50), 'a late timer performs at most 250 ms of neural work');
+  assert.equal(controller.snapshot().brain.time, .25);
+  assert.equal(controller.snapshot().music.performanceTime, 2.5);
+  assert.equal(controller.composer.notes.findLast(note => note.voice === 'pad').beat, 4,
+    'at 96 BPM the latest pad belongs at beat four, despite the slower body simulation');
+
+  await controller.action({ action: 'stop' });
+  const piece = controller.composer.notes, pausedNotes = structuredClone(piece);
+  now += 60_000;
+  controller.tick();
+  assert.equal(controller.snapshot().music.performanceTime, 2.5, 'paused wall time is not musical time');
+  assert.equal(world.steps, 5);
+  assert.deepEqual(piece, pausedNotes);
+
+  await controller.action({ action: 'mode', mode: 'fruit' });
+  assert.equal(controller.snapshot().music.performanceTime, 2.5);
+  await controller.action({ action: 'mode', mode: 'ambient' });
+  assert.equal(controller.snapshot().music.performanceTime, 2.5);
+  assert.equal(controller.composer.notes, piece, 'mode changes retain the same recorded piece');
+
+  await controller.action({ action: 'start' });
+  now += 2500;
+  controller.tick();
+  await controller.pending;
+  assert.equal(controller.snapshot().music.performanceTime, 5, 'resume excludes the minute spent paused');
+  assert.equal(controller.snapshot().brain.time, .5);
+  const resumedNotes = controller.composer.notes.slice(pausedNotes.length);
+  assert.ok(resumedNotes.length > 0);
+  assert.ok(resumedNotes.every(note => note.voice === 'pad' && note.beat === 8),
+    'returning to Ambient continues at the next pulse instead of replaying earlier beats');
+  await controller.action({ action: 'stop' });
+});
+
 test('stop releases MIDI immediately, drains an in-flight clip save, then saves final notes', async () => {
   const { controller, adapter, calls, world, composer } = fixture();
   const write = deferred();
@@ -268,4 +311,98 @@ test('delayed timer samples each world round so intermediate string contacts are
   assert.equal(controller.composer.notes.length, 1, 'the path touched a string despite returning to its starting side');
   assert.equal(calls.filter(call => Array.isArray(call) && call[0] === 'play').length, 1);
   await controller.action({ action: 'stop' });
+});
+
+test('an ambient mode switch waits for Live configuration, preserves the piece and passes the selected mode to prepare', async () => {
+  const { controller, adapter, composer, calls } = fixture();
+  composer.notes.push({ id: 1, pitch: 60, velocity: 64, duration: 1, beat: 0 });
+  const notes = composer.notes, configuring = deferred();
+  adapter.prepared = false;
+  adapter.setMode = async mode => { calls.push(['setMode:start', mode]); await configuring.promise; calls.push(['setMode:end', mode]); };
+  adapter.prepare = async options => { calls.push(['prepare', options.mode]); adapter.prepared = true; };
+  const changing = controller.action({ action: 'mode', mode: 'ambient' });
+  await setImmediate();
+  assert.equal(controller.busy, true);
+  assert.equal(controller.composer, composer, 'the UI cannot claim the new instrument before Live finishes');
+  assert.equal(controller.instrumentMode, 'fruit');
+  assert.equal(controller.modeRevision, 0);
+  await assert.rejects(controller.action({ action: 'start' }), /previous action/);
+  configuring.resolve();
+  await changing;
+  assert.equal(controller.busy, false);
+  assert.equal(controller.instrumentMode, 'ambient');
+  assert.equal(controller.modeRevision, 1);
+  assert.equal(controller.composer.notes, notes);
+  assert.equal(controller.snapshot().music.authored, true);
+  await controller.action({ action: 'prepare' });
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'prepare' && call[1] === 'ambient'));
+  assert.equal(controller.composer.notes, notes);
+  assert.equal(controller.snapshot().prepared, true);
+});
+
+test('a failed SDK mode switch retains composer, recording and revision while reporting a sanitized recoverable error', async context => {
+  silenceErrors(context);
+  const { controller, adapter, composer } = fixture();
+  const notes = composer.notes;
+  notes.push({ id: 1, pitch: 60, velocity: 64, duration: 1, beat: 0 });
+  adapter.setMode = async () => { adapter.prepared = false; throw new Error('private-local-path SDK diagnostic payload'); };
+  let rejected;
+  await assert.rejects(controller.action({ action: 'mode', mode: 'ambient' }), error => { rejected = error; return true; });
+  assert.equal(controller.composer, composer);
+  assert.equal(controller.composer.notes, notes);
+  assert.equal(controller.instrumentMode, 'fruit');
+  assert.equal(controller.modeRevision, 0);
+  assert.equal(controller.busy, false);
+  assert.equal(controller.running, false);
+  assert.equal(controller.snapshot().prepared, false);
+  assert.equal(controller.snapshot().connection, false);
+  assert.doesNotMatch(rejected.message, /private-local-path|diagnostic payload/);
+  assert.doesNotMatch(JSON.stringify(controller.snapshot()), /private-local-path|diagnostic payload/);
+  adapter.setMode = async () => {};
+  adapter.prepare = async () => { adapter.prepared = true; };
+  await controller.action({ action: 'mode', mode: 'ambient' });
+  await controller.action({ action: 'prepare' });
+  assert.equal(controller.instrumentMode, 'ambient');
+  assert.equal(controller.modeRevision, 1);
+  assert.equal(controller.composer.notes, notes);
+  assert.equal(controller.snapshot().connection, true);
+  assert.equal(controller.snapshot().prepared, true);
+});
+
+test('ambient controls update at most twice per second and are applied before saving the performance', async () => {
+  const { controller, adapter, composer, calls } = fixture();
+  const ambience = { brightness: .2, density: .3, space: .4, pan: -.1, activity: .2 };
+  controller.instrumentMode = 'ambient';
+  composer.snapshot = () => ({ noteCount: composer.notes.length, ambience });
+  adapter.modulate = async values => { calls.push(['modulate', { ...values }]); };
+  await controller.action({ action: 'start' });
+  const start = controller.lastTick;
+  controller.tick(start + 50); await controller.pending;
+  controller.tick(start + 300); await controller.pending;
+  controller.tick(start + 550); await controller.pending;
+  const controls = calls.filter(call => Array.isArray(call) && call[0] === 'modulate');
+  assert.deepEqual(controls, [['modulate', ambience], ['modulate', ambience]]);
+  for (let index = 0; index < calls.length; index++) {
+    if (Array.isArray(calls[index]) && calls[index][0] === 'modulate') {
+      assert.equal(calls[index + 1][0], 'record', 'effect state belongs to the recorded performance update');
+    }
+  }
+  await controller.action({ action: 'stop' });
+});
+
+test('failed ambient modulation stops MIDI before recording and hides SDK effect diagnostics', async context => {
+  silenceErrors(context);
+  const { controller, adapter, composer, calls } = fixture();
+  controller.instrumentMode = 'ambient';
+  composer.snapshot = () => ({ noteCount: composer.notes.length, ambience: { brightness: .5, space: .5, pan: 0 } });
+  adapter.modulate = async () => { throw new Error('private-effect-parameter error'); };
+  await controller.action({ action: 'start' });
+  controller.tick(controller.lastTick + 50);
+  await controller.pending;
+  assert.equal(controller.running, false);
+  assert.equal(controller.saving, false);
+  assert.ok(calls.includes('midi:panic'));
+  assert.ok(calls.includes('panic'));
+  assert.ok(!calls.some(call => Array.isArray(call) && call[0] === 'record'));
+  assert.doesNotMatch(JSON.stringify(controller.snapshot()), /private-effect-parameter/);
 });

@@ -227,6 +227,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   const fruitObjects = new Map();
   const fruitColors = {banana: 0xe4c45b, apple: 0xe97761, grape: 0xa98bdb};
   const fallbackFruitNotes = {banana: {pitch: 60, label: 'C4'}, apple: {pitch: 64, label: 'E4'}, grape: {pitch: 67, label: 'G4'}};
+  const fallbackAmbientNotes = {banana: {pitch: 72, label: 'C5'}, apple: {pitch: 76, label: 'E5'}, grape: {pitch: 79, label: 'G5'}};
   function disposeFruit(item) {
     stage.remove(item.object); gardenStage.remove(item.wire);
     item.materials.forEach(m => m.dispose()); item.halo.geometry.dispose(); item.halo.material.dispose();
@@ -248,7 +249,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     const ids = new Set();
     for (const [index, item] of fruits.entries()) {
       ids.add(item.id);
-      const note = music.fruitNotes?.[item.kind] ?? fallbackFruitNotes[item.kind], noteLabel = note?.label ?? 'NOTE';
+      const note = music.fruitNotes?.[item.kind] ?? (music.instrumentMode === 'ambient' ? fallbackAmbientNotes[item.kind] : fallbackFruitNotes[item.kind]), noteLabel = note?.label ?? 'NOTE';
       let visual = fruitObjects.get(item.id);
       if (!visual || visual.kind !== item.kind || visual.labelText !== noteLabel) {
         if (visual) disposeFruit(visual);
@@ -293,7 +294,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
       seenContacts.add(key); if (seenContacts.size > 256) seenContacts.delete(seenContacts.values().next().value);
       const contactMode = contact.instrumentMode ?? (contact.fruitId ? 'fruit' : 'strings');
       if (contactMode !== mode) continue;
-      if (mode === 'fruit') {
+      if (mode !== 'strings') {
         const item = fruitObjects.get(contact.fruitId); if (item) {item.struck = now; midiStruck = now;}
       } else {
         const item = stringObjects.get(contact.stringId); if (item) {item.struck = now; item.contactX = clamp(contact.x ?? .5);}
@@ -317,10 +318,10 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   function pointerUp(event) { if(down&&Math.hypot(event.clientX-down.x,event.clientY-down.y)<5){const point=pointOnFloor(event);if(point)onPlaceFruit?.(point);}down=null; }
   function pointerLeave() {placement.visible=false;down=null;}
   canvas.addEventListener('pointermove',pointerMove);canvas.addEventListener('pointerdown',pointerDown);canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointerleave',pointerLeave);
-  function createFly(primary = false) {
-  const fly = new THREE.Group(); scene.add(fly); fly.position.set(0, 0, 0); fly.scale.setScalar(.43);
+  function createFly(primary = false, detailed = true) {
+  const fly = new THREE.Group(); scene.add(fly); fly.position.set(0, 0, 0); fly.scale.setScalar(detailed ? .43 : .34);
   ellipsoid(fly, amber, [0, .85, -.54], [.30, .28, .63]);
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < (detailed ? 5 : 3); i++) {
     const z = -.92 + i * .19;
     const radius = .3 * Math.sqrt(Math.max(.12, 1 - ((z + .54) / .63) ** 2));
     const band = mesh(new THREE.TorusGeometry(radius, .025, 5, 24), dark, fly);
@@ -329,12 +330,12 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   ellipsoid(fly, thoraxMaterial, [0, .99, -.01], [.31, .32, .43]);
   const head = new THREE.Group(); head.position.set(0, 1.03, .47); fly.add(head);
   ellipsoid(head, amber, [0, 0, 0], [.30, .25, .23]);
-  const eyeGeometry = new THREE.IcosahedronGeometry(1, 3);
+  const eyeGeometry = new THREE.IcosahedronGeometry(1, detailed ? 3 : 1);
   for (const side of [-1, 1]) {
     const eye = ellipsoid(head, red, [side * .23, .025, .077], [.16, .215, .17], eyeGeometry); eye.rotation.z = side * -.14;
     ellipsoid(head, dark, [side * .077, .01, .235], [.028, .05, .06]);
     line(head, [[side * .077, .045, .255], [side * .16, .11, .29], [side * .23, .16, .31]], 0xac986d);
-    for (let j = 0; j < 4; j++) line(head, [[side * (.13 + j * .025), .085 + j * .018, .28 + j * .007], [side * (.16 + j * .03), .14 + j * .026, .29 + j * .007]], 0x817351);
+    if (detailed) for (let j = 0; j < 4; j++) line(head, [[side * (.13 + j * .025), .085 + j * .018, .28 + j * .007], [side * (.16 + j * .03), .14 + j * .026, .29 + j * .007]], 0x817351);
   }
   ellipsoid(head, dark, [0, -.13, .20], [.047, .095, .042]);
   const wingMaterial = material(0xdde4d9, { transparent: true, opacity: .25, metalness: .16, roughness: .23, side: THREE.DoubleSide, depthWrite: false });
@@ -346,7 +347,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     shape.bezierCurveTo(1.45, -.64, .77, -.73, .06, -.13); shape.closePath();
     const g = new THREE.ShapeGeometry(shape, 16); g.rotateX(-Math.PI / 2); g.scale(side, 1, 1);
     mesh(g, wingMaterial, pivot);
-    for (const points of [
+    if (detailed) for (const points of [
       [[0, .007, 0], [.55, .007, .06], [1.29, .007, .24]],
       [[.1, .008, .04], [.48, .008, .3], [1.1, .008, .51]],
       [[.35, .008, .04], [.56, .008, .29], [.69, .008, .47]],
@@ -356,16 +357,22 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     wings.push({ pivot, side });
   }
   const legs = [];
+  let legLines = null, legPositions = null;
+  if (!detailed) {
+    legPositions = new Float32Array(6 * 18);
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(legPositions, 3));
+    legLines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({color: 0xc4a772})); fly.add(legLines);
+  }
   for (const side of [-1, 1]) for (let leg = 0; leg < 3; leg++) {
     const index = (side < 0 ? 0 : 3) + leg;
     const anchor = new THREE.Vector3(side * .22, .89, .16 - leg * .22);
     const knee = new THREE.Vector3(side * (.54 + leg * .10), .55, .56 - leg * .53);
     const foot = new THREE.Vector3(side * (.68 + leg * .2), .06, .97 - leg * .78);
-    const upper = segment(fly, thoraxMaterial, .023), lower = segment(fly, amber, .017), tarsus = segment(fly, dark, .010);
+    const upper = detailed ? segment(fly, thoraxMaterial, .023) : null, lower = detailed ? segment(fly, amber, .017) : null, tarsus = detailed ? segment(fly, dark, .010) : null;
     legs.push({ index, side, leg, anchor, knee, foot, upper, lower, tarsus, k: knee.clone(), f: foot.clone(), toe: foot.clone() });
   }
   // Fine bristles and wing veins are original decorative linework.
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < (detailed ? 22 : 0); i++) {
     const a = i * 2.39996, x = Math.cos(a) * .23, z = Math.sin(a) * .28;
     line(fly, [[x, 1.19 + Math.cos(a) * .035, z], [x * 1.16, 1.36 + i % 3 * .018, z * 1.1]], 0x514433);
   }
@@ -373,7 +380,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = .023;
   const marker = mesh(new THREE.RingGeometry(.36, .38, 28), new THREE.MeshBasicMaterial({ color: 0xc8eabc, transparent: true, opacity: .47, side: THREE.DoubleSide, depthWrite: false }), stage);
   marker.rotation.x = -Math.PI / 2; marker.position.y = .026; marker.visible = primary;
-  return { fly, head, wings, legs, shadow, marker, phase: 0, initial: true };
+  return { fly, head, wings, legs, legLines, legPositions, shadow, marker, phase: 0, initial: true };
   }
   camera.position.set(4.3, 10.8, 10); orbit.target.set(0, .12, 0); orbit.update();
   const flyObjects = new Map();
@@ -387,7 +394,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
       for (const [id, model] of flyObjects) { model.fly.visible = ids.has(id); model.shadow.visible = ids.has(id); model.marker.visible = ids.has(id) && id === (flies[0]?.id ?? 'fly-1'); }
       flies.forEach((state, index) => {
         const id = state.id ?? `fly-${index + 1}`;
-        if (!flyObjects.has(id)) flyObjects.set(id, createFly(index === 0));
+        if (!flyObjects.has(id)) flyObjects.set(id, createFly(index === 0, flies.length <= 3 || index === 0));
         const model = flyObjects.get(id), {fly, head, legs, wings, shadow, marker} = model;
         fly.visible = true; shadow.visible = true;
         const a = state.activity || [], mean = a.reduce((sum, v) => sum + clamp(v), 0) / Math.max(1, a.length);
@@ -407,17 +414,21 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
           l.k.copy(l.knee); l.k.y += Math.max(0, oscillation) * .09;
           l.f.copy(l.foot); l.f.z += oscillation * .11; l.f.y += Math.max(0, oscillation) * .14 + (flying ? .12 : 0);
           l.toe.copy(l.f); l.toe.x += l.side * .12; l.toe.z += .05; l.toe.y = Math.max(.025, l.f.y - .035);
-          connect(l.upper, l.anchor, l.k); connect(l.lower, l.k, l.f); connect(l.tarsus, l.f, l.toe);
+          if (model.legLines) {
+            const offset = l.index * 18;
+            [l.anchor, l.k, l.k, l.f, l.f, l.toe].forEach((point, i) => point.toArray(model.legPositions, offset + i * 3));
+          } else {connect(l.upper, l.anchor, l.k); connect(l.lower, l.k, l.f); connect(l.tarsus, l.f, l.toe);}
         });
+        if (model.legLines) model.legLines.geometry.attributes.position.needsUpdate = true;
         wings.forEach(w => {
           const beat = running && !reducedMotion ? (flying ? Math.sin(now * 67 + index) * .52 : Math.sin(phase * 3) * mean * .045) : 0;
           w.pivot.rotation.z = w.side * (.045 + beat); w.pivot.rotation.y = w.side * (flying ? -.2 : -.4);
         });
       });
-      const mode = music.instrumentMode === 'strings' ? 'strings' : 'fruit';
-      stringStage.visible = mode === 'strings'; gardenStage.visible = mode === 'fruit';
+      const mode = music.instrumentMode === 'strings' ? 'strings' : music.instrumentMode === 'ambient' ? 'ambient' : 'fruit';
+      stringStage.visible = mode === 'strings'; gardenStage.visible = mode !== 'strings';
       beginContacts(music, mode);
-      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode === 'fruit', now);
+      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode !== 'strings', now);
       if (mode === 'strings') updateStrings(music, now);
       updateContacts(music, now, mode);
       view.render();

@@ -20,10 +20,13 @@ upstream notice is in `src/vendor/desktop-fly/LICENSE`.
 
 Ableton Fly's original wrapper supplies artificial descending-neuron stimulation
 from a seeded, modeled environment. Simulated motor rates gate movement and
-turning. Original feeding-contact rules in Fruit pads mode, or geometric
-string-contact tests in Strings mode, convert the resulting world state into
-MIDI notes. Each of three flies uses a separate copy of the same measured graph,
-with shared fruit. Its displayed fly illustrates that simulated state. It does not reproduce
+turning. Ambient mode maps collective movement to performance controls over an
+authored musical foundation, with accents from feeding visits. Fruit pads uses
+feeding-contact rules, and Strings uses geometric string-contact tests to generate
+MIDI notes. The standard launchers start twelve flies, each with independent state
+and seeded stimulation using the same measured graph, with shared fruit. These
+are copies of one anatomical subset, not twelve separate connectomes. The
+displayed fly illustrates that simulated state. It does not reproduce
 DesktopFly's articulated body or its female FlyWire brain model.
 
 ## MaleCNS v1.0 circuit data
@@ -65,7 +68,10 @@ are omitted from the view but retained in the simulation. Point colors show
 modeled firing rates, not recorded activity. Fruit attraction, hunger, feeding,
 rest and flight height are engineered behavior rules. Fruit kinds have equal
 attraction in the model. Olfactory circuitry, biological reward learning and
-musical feedback are not modeled. Fruit pads maps new feeding visits to authored
+musical feedback are not modeled. Ambient's Cmaj9, Am9, Fmaj9 and G6/9 progression,
+sixteen-beat chord durations, soft four-beat attacks and swarm-to-sound mappings
+are authored musical rules. The flies influence the arrangement and sound; they
+do not learn or originate the underlying progression. Fruit pads maps new feeding visits to authored
 pitches: banana C4 (MIDI 60), apple E4 (64), and grape G4 (67). Strings uses authored
 pitch assignments and geometric contact thresholds. These are musical mappings,
 not measured animal preferences or electrical-conductivity models.
@@ -75,12 +81,19 @@ The upstream code license's older blanket data note is superseded for this
 MaleCNS file by its [specific data license](https://github.com/DenisSergeevitch/desktop-fly/blob/32b00011e83c3dc85fa3ea0b3934155b04f1635d/data/DATA_LICENSE.md).
 
 
-## Native MIDI bridge and preview instrument
+## Native MIDI bridge, ambient synthesis and preview instrument
 
 `native/midi-bridge.swift` and its JavaScript wrapper are original MIT-licensed
 project code. They use the CoreMIDI and Foundation frameworks provided by macOS;
 those Apple frameworks are not redistributed. The locally compiled bridge
 binary and compiler cache are excluded from Git.
+
+Ambient's original waveform is generated locally by MIT-licensed project code.
+The generation code is included; generated audio assets are excluded from Git.
+Live plays the sample through Simpler and native Reverb. This waveform contains
+no copied recordings or third-party samples. Harmony, soft attacks, bell-like
+fruit accents, and brightness/density/space/pan mappings are original musical
+design choices.
 
 The browser preview instrument is an original oscillator-based sound, generated
 locally through the Web Audio API. It contains no recorded piano samples.
@@ -91,7 +104,7 @@ The Ableton Extensions SDK is proprietary and supplied by the user during local
 setup. Its package archives, extracted packages and compiled extension bundles
 are excluded from Git. No SDK source or documentation is redistributed here.
 
-The Live instrument loads an acoustic-guitar sample from the user's installed
+Fruit pads and Strings load an acoustic-guitar sample from the user's installed
 Ableton factory content into Simpler. The sample remains local and is not copied
 into this repository, bundled, uploaded or distributed with MIDI exports. Ableton
 software and factory content retain their respective license terms. This project
@@ -104,7 +117,7 @@ particularly the [Copenhagen Contemporary installation](https://copenhagencontem
 This project is an independent digital adaptation with original geometry and
 code. No artwork photographs, exhibition recordings or other media are included.
 
-The default Fruit pads mode takes conceptual inspiration from
+Fruit pads mode takes conceptual inspiration from
 [Playtronica's Playtron](https://help.playtronica.com/devices/playtron/), a physical
 touch-to-MIDI instrument for conductive objects. This project's virtual feeding
 contacts, wires and MIDI box use original code and geometry. No Playtron hardware,
