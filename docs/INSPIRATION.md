@@ -72,7 +72,10 @@ real fly's favorite fruit or an acquired taste for the instrument. No musical re
 fed back into the circuit.
 
 In **Ambient**, Cmaj9 → Am9 → Fmaj9 → G6/9 is an authored progression. Chords last
-sixteen beats and soft attacks occur every four beats. Collective movement
+eight beats in Lively/Wild or sixteen in Calm; soft attacks occur every four beats.
+Lively and Wild add authored upper ripples every beat or half-beat, with pitches
+and strength influenced by the crowd. Energy also increases toy body movement
+gain without altering the neural integration clock. Collective movement
 influences brightness, note density, space and pan, while new fruit visits add
 bell-like accents. The slow foundation continues during stillness. The flies
 perform changes to a designed piece; the model does not learn its harmony or

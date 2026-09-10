@@ -20,7 +20,8 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
     if (!active || !context) return;
     const state = getState() || {}, music = state.music || {}, fruitMode = music.instrumentMode !== 'strings', ambientMode = music.instrumentMode === 'ambient', isLive = state.mode === 'live';
     const count = Math.max(1, Math.min(12, Math.round(number(state.brain?.flyCount, state.brain?.flies?.length || 3)))), crowd = `${count} ${count === 1 ? 'FLY' : 'FLIES'}`;
-    const title = ambientMode ? 'AMBIENT SWARM' : fruitMode ? 'FRUIT → MIDI' : 'FROM FRUIT TO EAR', seconds = Math.floor((performance.now() - startedAt) / 1000);
+    const energy = ['calm','lively','wild'].includes(music.energy) ? music.energy : 'lively';
+    const title = ambientMode ? `AMBIENT SWARM · ${energy.toUpperCase()}` : fruitMode ? 'FRUIT → MIDI' : 'FROM FRUIT TO EAR', seconds = Math.floor((performance.now() - startedAt) / 1000);
     const sharedVideo = video?.srcObject && video.readyState >= 2 && video.videoWidth > 0;
     const ctx = context;
     ctx.fillStyle = '#050606'; ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -35,21 +36,21 @@ export function createDemoRecorder({getState, video, brainCanvas, flyCanvas, onC
       fitImage(ctx, video, 40, 109, 798, 513);
       pane(866, 77, 384, 239, '02 / FLY 01 · MOTOR NERVE CORD');
       fitImage(ctx, brainCanvas, 875, 107, 366, 200);
-      pane(866, 334, 384, 298, `03 / ${crowd} · ${ambientMode ? 'AMBIENT GARDEN' : fruitMode ? 'FRUIT PADS' : 'SIX STRINGS'}`);
+      pane(866, 334, 384, 298, `03 / ${crowd} · ${ambientMode ? energy.toUpperCase()+' GARDEN' : fruitMode ? 'FRUIT PADS' : 'SIX STRINGS'}`);
       fitImage(ctx, flyCanvas, 875, 364, 366, 259);
     } else {
-      pane(30, 77, 818, 555, `01 / ${crowd} · ${ambientMode ? 'AMBIENT GARDEN' : fruitMode ? 'FRUIT TOUCH INSTRUMENT' : 'SIX VIRTUAL STRINGS'}`);
+      pane(30, 77, 818, 555, `01 / ${crowd} · ${ambientMode ? energy.toUpperCase()+' GARDEN' : fruitMode ? 'FRUIT TOUCH INSTRUMENT' : 'SIX VIRTUAL STRINGS'}`);
       fitImage(ctx, flyCanvas, 42, 110, 794, 510);
       pane(866, 77, 384, 401, '02 / FLY 01 · MOTOR NERVE CORD');
       fitImage(ctx, brainCanvas, 876, 109, 364, 359);
       text('1,045 MODELED NEURONS', 879, 510, 16, '#dbe7d5'); text('880 measured soma positions', 879, 538, 12); text('Motor nerve cord subset · modeled activity', 879, 558, 10);
       text(isLive ? 'LIVE MIDI · WINDOW NOT SHARED' : 'BROWSER PREVIEW', 879, 580, 13, '#e2bf82');
-      text(isLive ? 'Instrument audio requires capture.' : ambientMode ? 'Synthesized pads and bells' : 'Synthesized instrument sound', 879, 605, 11);
+      text(isLive ? 'Instrument audio requires capture.' : ambientMode ? 'Synthesized pads, ripples and bells' : 'Synthesized instrument sound', 879, 605, 11);
     }
     const ambience = music.ambience || {}, percent = value => Math.round(Math.min(1, Math.max(0, number(value))) * 100);
     const brightnessLabel = isLive && music.liveControls?.brightness !== true ? 'BRIGHTNESS TARGET' : 'BRIGHTNESS', spaceLabel = isLive && music.liveControls?.space !== true ? 'SPACE TARGET' : 'SPACE';
     text(ambientMode ? `${music.chord || 'AMBIENT'}  ·  ENERGY ${percent(ambience.activity)}%  ·  ${brightnessLabel} ${percent(ambience.brightness)}%  ·  ${spaceLabel} ${percent(ambience.space)}%` : fruitMode ? 'BANANA C4  ·  APPLE E4  ·  GRAPES G4' : 'C3  ·  G3  ·  C4  ·  E4  ·  G4  ·  C5', 30, 654, ambientMode ? 12 : 13, '#dfe8dc');
-    ctx.textAlign = 'right'; text(ambientMode ? 'AUTHORED HARMONY · FLY MODULATION' : fruitMode ? 'ONE VISIT → ONE NOTE' : 'ONE STRING TOUCH → ONE NOTE', 1250, 654, 12, '#bdf0a8'); ctx.textAlign = 'left';
+    ctx.textAlign = 'right'; text(ambientMode ? (energy === 'calm' ? 'AUTHORED PADS · FLY MODULATION' : 'AUTHORED RIPPLES · FLY MODULATION') : fruitMode ? 'ONE VISIT → ONE NOTE' : 'ONE STRING TOUCH → ONE NOTE', 1250, 654, 12, '#bdf0a8'); ctx.textAlign = 'left';
     const soundLabel = audioSource === 'shared' ? 'SHARED AUDIO' : audioSource === 'preview' ? 'BROWSER PREVIEW AUDIO' : 'VIDEO ONLY · NO AUDIO CAPTURED';
     text(`${soundLabel}  ·  ${state.running ? 'FLIES EXPLORING' : 'PAUSED'}  ·  ${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')}`, 30, 691, 10, audioSource === 'none' ? '#e2bf82' : '#91a194');
     ctx.textAlign = 'right'; text('MEASURED MOTOR CIRCUITS · MODELED FRUIT SEEKING', 1250, 691, 9); ctx.textAlign = 'left';

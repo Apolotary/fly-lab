@@ -1,4 +1,4 @@
-import { FlyWorld } from './world.js';
+import { ENERGY_LEVELS, FlyWorld } from './world.js';
 
 const STEP_MS = 50;
 const STARTS = Object.freeze([
@@ -8,6 +8,11 @@ const STARTS = Object.freeze([
 ]);
 const MAX_FLIES = 12;
 const SEED_OFFSETS = [0, 104729, 209759];
+const FRESH_LAYOUTS = Object.freeze([
+  [[0.24, 0.28], [0.72, 0.65], [0.27, 0.76]],
+  [[0.72, 0.24], [0.23, 0.51], [0.68, 0.76]],
+  [[0.48, 0.22], [0.25, 0.73], [0.79, 0.55]],
+]);
 const startFor = index => index < STARTS.length ? STARTS[index] : {
   x: .5 + Math.cos(-Math.PI / 2 + (index - 3) * 2.399963229728653) * .35,
   y: .5 + Math.sin(-Math.PI / 2 + (index - 3) * 2.399963229728653) * .35,
@@ -19,8 +24,11 @@ const startFor = index => index < STARTS.length ? STARTS[index] : {
  * enters this world: attraction and walking/flight bouts are toy animal rules.
  */
 export class FlyGarden {
-  constructor({ seed = 1337, count, worlds } = {}) {
+  constructor({ seed = 1337, count, worlds, energy = 'calm' } = {}) {
     if (!Number.isFinite(seed)) throw new TypeError('Garden seed must be finite.');
+    if (typeof energy !== 'string' || !Object.hasOwn(ENERGY_LEVELS, energy)) throw new RangeError('Energy must be calm, lively or wild.');
+    this.seed = seed;
+    this.energy = energy;
     if (worlds !== undefined && (!Array.isArray(worlds) || worlds.length < 1 || worlds.length > MAX_FLIES)) {
       throw new TypeError('The garden needs one to twelve independent FlyWorld instances.');
     }
@@ -29,7 +37,7 @@ export class FlyGarden {
     if (worlds && worlds.length !== this.count) throw new RangeError('Fly count must match the supplied worlds.');
     this.worlds = worlds ? [...worlds] : Array.from({length: this.count}, (_, index) => {
       const offset = SEED_OFFSETS[index] ?? SEED_OFFSETS[2] + (index - 2) * 104729;
-      return new FlyWorld({ seed: (seed + offset) >>> 0, walkingIntervals: true });
+      return new FlyWorld({ seed: (seed + offset) >>> 0, walkingIntervals: true, energy });
     });
     if (this.worlds.some(world => !(world instanceof FlyWorld))) throw new TypeError('The garden needs independent FlyWorld instances.');
     if (new Set(this.worlds).size !== this.count || new Set(this.worlds.map(world => world.brain)).size !== this.count) throw new TypeError('Every fly needs an independent world and motor circuit.');
@@ -38,8 +46,10 @@ export class FlyGarden {
 
   reset() {
     this.pendingMs = 0;
+    this.refreshCount = 0;
     this.fruits = [];
     for (const [index, world] of this.worlds.entries()) {
+      world.setEnergy(this.energy);
       world.reset();
       world.clearFruit();
       const start = startFor(index);
@@ -69,6 +79,25 @@ export class FlyGarden {
     for (const world of this.worlds) world.clearFruit();
     this.fruits = [];
     this.syncFruit();
+    return this.snapshot();
+  }
+
+  refreshFruit() {
+    // Changing the food arrangement leaves brains, clocks and visit counters
+    // running. Fresh IDs keep a new visit distinct from a removed food item.
+    const layout = FRESH_LAYOUTS[((this.seed >>> 0) + this.refreshCount++) % FRESH_LAYOUTS.length];
+    this.clearFruit();
+    ['banana', 'apple', 'grape'].forEach((kind, index) => {
+      const [x, y] = layout[index];
+      this.addFruit({ x, y, kind });
+    });
+    return this.snapshot();
+  }
+
+  setEnergy(energy) {
+    if (typeof energy !== 'string' || !Object.hasOwn(ENERGY_LEVELS, energy)) throw new RangeError('Energy must be calm, lively or wild.');
+    for (const world of this.worlds) world.setEnergy(energy);
+    this.energy = energy;
     return this.snapshot();
   }
 
@@ -106,6 +135,7 @@ export class FlyGarden {
       x: world.x, y: world.y, heading: world.heading,
       height: world.height, speed: world.speed, turnRate: world.turnRate,
       behavior: world.behavior, gait: world.gait, hunger: world.hunger,
+      energy: world.energy, motionGain: world.motionGain,
       feedingId: world.behavior === 'feeding' ? world.feedingId : null,
       time: Number.isFinite(world.brain.timeMs) ? world.brain.timeMs / 1000 : world.time,
       activity: [...(world.brain.activity ?? world.brain.snapshot().activity)],
@@ -115,6 +145,7 @@ export class FlyGarden {
     return {
       ...primary,
       selectedFlyId: 'fly-1',
+      energy: this.energy, motionGain: ENERGY_LEVELS[this.energy],
       flyCount: this.count,
       flies,
       fruits: this.fruits.map((fruit) => ({ ...fruit })),

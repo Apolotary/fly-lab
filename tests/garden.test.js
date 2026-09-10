@@ -149,3 +149,73 @@ test('garden rejects invalid counts and separately wrapped worlds sharing one br
   assert.throws(() => new FlyGarden({ worlds }), /independent world and motor circuit/);
   assert.throws(() => new FlyGarden({ worlds: [worlds[0]], count: 2 }), /match/);
 });
+
+test('energy propagates to every independent fly and remains a reversible body setting', () => {
+  const garden = cheapGarden();
+  const original = garden.snapshot();
+  assert.equal(original.energy, 'calm');
+  const brains = garden.worlds.map(world => world.brain);
+  for (const [energy, gain] of [['lively', 1.65], ['wild', 2.25], ['calm', 1]]) {
+    const state = garden.setEnergy(energy);
+    assert.equal(state.energy, energy);
+    assert.equal(state.motionGain, gain);
+    assert.ok(state.flies.every(fly => fly.energy === energy && fly.motionGain === gain));
+    assert.deepEqual(garden.worlds.map(world => world.brain), brains);
+    assert.equal(state.time, original.time);
+  }
+  const unchanged = garden.snapshot();
+  for (const energy of ['fast', '', null, 2, {}, ['wild']]) {
+    assert.throws(() => garden.setEnergy(energy), /calm, lively or wild/);
+    assert.throws(() => new FlyGarden({ energy }), /calm, lively or wild/);
+    assert.deepEqual(garden.snapshot(), unchanged);
+  }
+  garden.setEnergy('wild');
+  garden.reset();
+  assert.ok(garden.snapshot().flies.every(fly => fly.energy === 'wild'));
+  const stopped = cheapGarden(0);
+  stopped.setEnergy('wild');
+  assert.ok(run(stopped, 3000).flies.every(fly => fly.speed === 0 && fly.distanceTravelled === 0));
+});
+
+test('fruit refresh replaces the shared supply without resetting brains, travel or visits', () => {
+  const garden = new FlyGarden({ count: 3, energy: 'lively' });
+  run(garden, 1500);
+  const before = garden.snapshot();
+  const neural = garden.worlds.map(world => world.brain.snapshot());
+  const circuits = garden.worlds.map(world => world.brain.sim);
+  for (let index = 0; index < 3; index++) garden.addFruit({ x: 0.3 + index * 0.2, y: 0.4 });
+  garden.fruits[0].amount = 0.01;
+  const previousIds = new Set(garden.fruits.map(fruit => fruit.id));
+  const refreshed = garden.refreshFruit();
+  assert.deepEqual(refreshed.fruits.map(fruit => fruit.kind), ['banana', 'apple', 'grape']);
+  assert.ok(refreshed.fruits.every(fruit => fruit.amount === 1 && !previousIds.has(fruit.id)));
+  assert.ok(garden.worlds.every(world => world.fruits === garden.fruits));
+  assert.deepEqual(garden.worlds.map(world => world.brain.sim), circuits);
+  assert.deepEqual(garden.worlds.map(world => world.brain.snapshot()), neural);
+  refreshed.flies.forEach((fly, index) => {
+    for (const key of ['x', 'y', 'heading', 'time', 'distanceTravelled', 'visits']) assert.equal(fly[key], before.flies[index][key]);
+  });
+  for (let index = 0; index < 3; index++) garden.addFruit({ x: 0.2 + index * 0.2, y: 0.8 });
+  assert.throws(() => garden.addFruit({ x: 0.5, y: 0.5 }), /six fruits/);
+});
+
+test('refresh layouts vary, remain spread out and replay deterministically from the garden seed', () => {
+  const a = cheapGarden(), b = cheapGarden();
+  const layouts = new Set();
+  for (let index = 0; index < 3; index++) {
+    const fruits = a.refreshFruit().fruits;
+    assert.deepEqual(fruits, b.refreshFruit().fruits);
+    layouts.add(JSON.stringify(fruits.map(({ x, y }) => [x, y])));
+    for (const fruit of fruits) assert.ok(fruit.x >= 0.06 && fruit.x <= 0.94 && fruit.y >= 0.06 && fruit.y <= 0.94);
+    for (let left = 0; left < fruits.length; left++) {
+      for (let right = left + 1; right < fruits.length; right++) {
+        assert.ok(Math.hypot(fruits[left].x - fruits[right].x, fruits[left].y - fruits[right].y) > 0.3);
+      }
+    }
+  }
+  assert.equal(layouts.size, 3);
+  a.reset(); b.reset();
+  assert.deepEqual(a.refreshFruit().fruits, b.refreshFruit().fruits);
+  const otherSeed = new FlyGarden({ seed: 1338, worlds: [new FlyWorld({ brain: mockBrain() })] });
+  assert.notDeepEqual(a.snapshot().fruits.map(({ x, y }) => [x, y]), otherSeed.refreshFruit().fruits.map(({ x, y }) => [x, y]));
+});

@@ -7,6 +7,9 @@ const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 const angleDifference = (angle) => Math.atan2(Math.sin(angle), Math.cos(angle));
 const wrap = (angle) => ((angle % TAU) + TAU) % TAU;
 const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+export const ENERGY_LEVELS = Object.freeze({ calm: 1, lively: 1.65, wild: 2.25 });
+const validEnergy = value => typeof value === 'string' && Object.hasOwn(ENERGY_LEVELS, value);
+const pacingGain = motionGain => Math.min(1.4, 1 + (motionGain - 1) * 0.32);
 
 function randomFrom(seed) {
   let value = seed >>> 0;
@@ -24,11 +27,15 @@ function randomFrom(seed) {
  * interpolation moves the fly, and silencing the graph stops locomotion.
  */
 export class FlyWorld {
-  constructor({ seed = 1337, brain = new FlyBrain({ seed }), walkingIntervals = false } = {}) {
+  constructor({ seed = 1337, brain = new FlyBrain({ seed }), walkingIntervals = false, energy = 'calm' } = {}) {
     if (!Number.isFinite(seed)) throw new TypeError('World seed must be finite.');
+    if (!validEnergy(energy)) throw new RangeError('Energy must be calm, lively or wild.');
     this.seed = seed;
     this.brain = brain;
     this.walkingIntervals = walkingIntervals;
+    this.energy = energy;
+    this.motionGain = ENERGY_LEVELS[energy];
+    this.pacingGain = pacingGain(this.motionGain);
     this.reset();
   }
 
@@ -56,7 +63,7 @@ export class FlyWorld {
     this.nextExplore = 0;
     this.wasAirborne = false;
     this.gait = this.walkingIntervals ? 'walking' : 'flying';
-    this.nextGait = this.walkingIntervals ? 3 + this.random() * 3 : Infinity;
+    this.nextGait = this.walkingIntervals ? (3 + this.random() * 3) / this.pacingGain : Infinity;
     this.nextFruitId = 1;
     this.fruits = [];
     this.addFruit({ x: 0.25, y: 0.32, kind: 'banana' });
@@ -95,6 +102,25 @@ export class FlyWorld {
     return this.snapshot();
   }
 
+  setEnergy(energy) {
+    if (!validEnergy(energy)) throw new RangeError('Energy must be calm, lively or wild.');
+    if (energy === this.energy) return this.snapshot();
+    const previousPacing = this.pacingGain;
+    this.energy = energy;
+    this.motionGain = ENERGY_LEVELS[energy];
+    this.pacingGain = pacingGain(this.motionGain);
+    // Energy is a toy body/pacing control. It does not accelerate neural time,
+    // reset the brain, or create movement when the motor graph is silent.
+    const ratio = previousPacing / this.pacingGain;
+    this.restTime *= ratio;
+    for (const schedule of ['nextExplore', 'nextGait']) {
+      if (Number.isFinite(this[schedule]) && this[schedule] > this.time) {
+        this[schedule] = this.time + (this[schedule] - this.time) * ratio;
+      }
+    }
+    return this.snapshot();
+  }
+
   step(dtMs = STEP_MS) {
     if (!Number.isFinite(dtMs) || dtMs < 0 || dtMs > 1000) {
       throw new RangeError('dtMs must be between 0 and 1000 milliseconds.');
@@ -111,7 +137,7 @@ export class FlyWorld {
   tick() {
     const dt = STEP_MS / 1000;
     this.time += dt;
-    this.hunger = clamp(this.hunger + dt * 0.013);
+    this.hunger = clamp(this.hunger + dt * 0.013 * this.pacingGain);
     const food = this.fruits.reduce((closest, fruit) => {
       const distance = Math.hypot(fruit.x - this.x, fruit.y - this.y);
       return !closest || distance < closest.distance ? { fruit, distance } : closest;
@@ -123,7 +149,7 @@ export class FlyWorld {
 
     if (this.time >= this.nextExplore) {
       this.explorationHeading = wrap(this.heading + (this.random() - 0.5) * 2.7);
-      this.nextExplore = this.time + 2.5 + this.random() * 2.5;
+      this.nextExplore = this.time + (2.5 + this.random() * 2.5) / this.pacingGain;
     }
     let desiredHeading = this.explorationHeading;
     if (this.behavior === 'seeking' && food) {
@@ -147,14 +173,14 @@ export class FlyWorld {
     if (this.behavior === 'feeding') {
       const fruit = this.fruits.find((item) => item.id === this.feedingId);
       if (fruit) {
-        fruit.amount = clamp(fruit.amount - dt * 0.32);
-        this.hunger = clamp(this.hunger - dt * 0.38);
-        this.feedTime += dt;
+        fruit.amount = clamp(fruit.amount - dt * 0.32 * this.pacingGain);
+        this.hunger = clamp(this.hunger - dt * 0.38 * this.pacingGain);
+        this.feedTime += dt * this.pacingGain;
       }
       if (!fruit || fruit.amount <= 0 || this.feedTime >= 1.8) {
         this.fruits = this.fruits.filter((item) => item.amount > 0);
         this.behavior = 'resting';
-        this.restTime = 1.8 + this.random() * 1.4;
+        this.restTime = (1.8 + this.random() * 1.4) / this.pacingGain;
         this.feedingId = null;
       }
     } else if (this.behavior === 'resting') {
@@ -167,13 +193,13 @@ export class FlyWorld {
     // engineered body rule. Neither strings nor musical output influence them.
     if (this.walkingIntervals && moving && this.time >= this.nextGait) {
       this.gait = this.gait === 'walking' ? 'flying' : 'walking';
-      this.nextGait = this.time + 3 + this.random() * 4;
+      this.nextGait = this.time + (3 + this.random() * 4) / this.pacingGain;
     }
     const approach = this.behavior === 'seeking' && food ? clamp(food.distance / 0.12, 0.15, 1) : 1;
     // Heading control compensates the uncalibrated circuit's left/right bias;
     // its strength, neural steering texture and translation all require motors.
-    this.turnRate = moving && energy > 0 ? (clamp(error * 2.8, -2.6, 2.6) + (left - right) * 0.7) * energy : 0;
-    this.speed = moving ? motor * 0.34 * approach * (this.gait === 'walking' ? 0.72 : 1) : 0;
+    this.turnRate = moving && energy > 0 ? (clamp(error * 2.8, -2.6, 2.6) + (left - right) * 0.7) * energy * this.motionGain : 0;
+    this.speed = moving ? motor * 0.34 * approach * (this.gait === 'walking' ? 0.72 : 1) * this.motionGain : 0;
     if (this.turnRate !== 0) this.heading = wrap(this.heading + this.turnRate * dt);
     const previousX = this.x, previousY = this.y;
     this.x = clamp(this.x + Math.cos(this.heading) * this.speed * dt, 0.035, 0.965);
@@ -207,6 +233,7 @@ export class FlyWorld {
       x: this.x, y: this.y, heading: this.heading,
       height: this.height, speed: this.speed, turnRate: this.turnRate,
       behavior: this.behavior, hunger: this.hunger,
+      energy: this.energy, motionGain: this.motionGain,
       feedingId: this.behavior === 'feeding' ? this.feedingId : null,
       gait: this.gait,
       fruits: this.fruits.map((fruit) => ({ ...fruit })),

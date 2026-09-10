@@ -9,11 +9,19 @@ export const AMBIENT_CHORDS = Object.freeze([
 ].map(([label, pitches]) => Object.freeze({ label, pitches: Object.freeze(pitches) })));
 
 const PULSE_BEATS = 4;
-const CHORD_BEATS = 16;
+export const ENERGY_PROFILES = Object.freeze({
+  calm: Object.freeze({ motionGain: 1, chordBeats: 16, rippleBeats: null }),
+  lively: Object.freeze({ motionGain: 1.65, chordBeats: 8, rippleBeats: 1 }),
+  wild: Object.freeze({ motionGain: 2.25, chordBeats: 8, rippleBeats: 0.5 }),
+});
 const EPSILON = 1e-9;
 const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
 const average = values => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+const validateEnergy = energy => {
+  if (!Object.hasOwn(ENERGY_PROFILES, energy)) throw new TypeError('Choose calm, lively, or wild energy.');
+  return energy;
+};
 
 function observe(world) {
   const flies = (Array.isArray(world?.flies) ? world.flies : [world]).filter(fly => fly && typeof fly === 'object');
@@ -35,7 +43,7 @@ function observe(world) {
  * entries add high bell accents. No musical values are fed into the world.
  */
 export class AmbientComposer {
-  constructor() { this.reset(); }
+  constructor({ energy = 'lively' } = {}) { this.energy = validateEnergy(energy); this.reset(); }
 
   reset() {
     this.notes = [];
@@ -44,11 +52,28 @@ export class AmbientComposer {
     this.lastFruitContactId = 0;
     this.lastTime = null;
     this.nextPadBeat = 0;
+    this.nextRippleBeat = ENERGY_PROFILES[this.energy].rippleBeats ? 0 : Infinity;
     this.lift = 0;
     this.ambience = { brightness: 0.2, density: 0.2, space: 0.65, pan: 0, activity: 0 };
     this.chord = AMBIENT_CHORDS[0].label;
     this.lastGesture = 'Authored ambient bed · fly modulation';
     this.complete = false;
+  }
+
+  setEnergy(energy) {
+    validateEnergy(energy);
+    if (energy === this.energy) return this.snapshot();
+    this.energy = energy;
+    const profile = ENERGY_PROFILES[energy];
+    const beat = (this.lastTime ?? 0) * TEMPO / 60;
+    // Live profile changes start on the next future pulse. They do not replay
+    // elapsed arpeggio steps, clear the piece, or manufacture fruit visits.
+    this.nextPadBeat = (Math.floor((beat + EPSILON) / PULSE_BEATS) + 1) * PULSE_BEATS;
+    this.nextRippleBeat = profile.rippleBeats
+      ? (Math.floor((beat + EPSILON) / profile.rippleBeats) + 1) * profile.rippleBeats : Infinity;
+    this.chord = AMBIENT_CHORDS[Math.floor(beat / profile.chordBeats) % AMBIENT_CHORDS.length].label;
+    this.lastGesture = `${energy} · authored harmony and fly modulation`;
+    return this.snapshot();
   }
 
   prime(world) {
@@ -60,7 +85,13 @@ export class AmbientComposer {
       const previous = this.notes.findLast(note => note.instrumentMode === 'ambient' && note.voice === 'pad');
       this.nextPadBeat = Math.max(Math.ceil((beat - EPSILON) / PULSE_BEATS) * PULSE_BEATS,
         previous && Number.isFinite(previous.beat) ? previous.beat + PULSE_BEATS : 0);
-      this.chord = AMBIENT_CHORDS[Math.floor(beat / CHORD_BEATS) % AMBIENT_CHORDS.length].label;
+      const profile = ENERGY_PROFILES[this.energy];
+      const previousRipple = this.notes.findLast(note => note.instrumentMode === 'ambient' && note.voice === 'ripple');
+      this.nextRippleBeat = profile.rippleBeats ? Math.max(
+        Math.ceil((beat - EPSILON) / profile.rippleBeats) * profile.rippleBeats,
+        previousRipple && Number.isFinite(previousRipple.beat) ? previousRipple.beat + profile.rippleBeats : 0,
+      ) : Infinity;
+      this.chord = AMBIENT_CHORDS[Math.floor(beat / profile.chordBeats) % AMBIENT_CHORDS.length].label;
     }
     return this.snapshot();
   }
@@ -105,13 +136,14 @@ export class AmbientComposer {
     for (const key of Object.keys(this.ambience)) this.ambience[key] += (target[key] - this.ambience[key]) * blend;
     this.lift += (target.lift - this.lift) * blend;
     const created = [];
+    const profile = ENERGY_PROFILES[this.energy];
 
     if (beat + EPSILON >= this.nextPadBeat) {
       // A delayed caller plays the current pulse once, never a burst of missed
       // chords. Normal controller ticks sample every 50 ms.
       const padBeat = Math.floor((beat + EPSILON) / PULSE_BEATS) * PULSE_BEATS;
       this.nextPadBeat = padBeat + PULSE_BEATS;
-      const chord = AMBIENT_CHORDS[Math.floor(padBeat / CHORD_BEATS) % AMBIENT_CHORDS.length];
+      const chord = AMBIENT_CHORDS[Math.floor(padBeat / profile.chordBeats) % AMBIENT_CHORDS.length];
       this.chord = chord.label;
       const count = Math.min(5, 3 + Math.floor(this.ambience.density * 2.99));
       const velocity = Math.round(34 + this.ambience.activity * 22 + this.ambience.density * 10);
@@ -139,6 +171,19 @@ export class AmbientComposer {
         duration: 1.6, voice: 'bell', reason: 'Fruit bell', authored: false }, created);
       this.lastGesture = `${accent.fruitKind} visit · bell over ${this.chord}`;
     }
+    if (profile.rippleBeats && beat + EPSILON >= this.nextRippleBeat) {
+      const rippleBeat = Math.floor((beat + EPSILON) / profile.rippleBeats) * profile.rippleBeats;
+      this.nextRippleBeat = rippleBeat + profile.rippleBeats;
+      const chord = AMBIENT_CHORDS[Math.floor(rippleBeat / profile.chordBeats) % AMBIENT_CHORDS.length];
+      const tones = chord.pitches.map(pitch => { while (pitch < 72) pitch += 12; return pitch; });
+      const position = Math.floor(clamp((this.ambience.pan + 1) / 2) * 4);
+      const activity = Math.floor(this.ambience.activity * 3);
+      const index = (Math.round(rippleBeat / profile.rippleBeats) + position + activity) % tones.length;
+      this.append({ pitch: tones[index], velocity: Math.round(42 + this.ambience.activity * 14 + this.ambience.density * 8),
+        duration: this.energy === 'wild' ? .24 : .42, beat: rippleBeat,
+        voice: 'ripple', chord: chord.label, reason: 'Authored ripple · fly modulation', authored: true }, created);
+      if (!accents.length) this.lastGesture = `${chord.label} · authored ripple · fly modulation`;
+    }
     if (this.notes.length >= MAX_NOTES) {
       this.complete = true;
       this.lastGesture = 'Piece complete';
@@ -149,6 +194,9 @@ export class AmbientComposer {
   snapshot() {
     return {
       tempo: TEMPO, instrumentMode: 'ambient', authored: true,
+      energy: this.energy, motionGain: ENERGY_PROFILES[this.energy].motionGain,
+      layout: { padBeats: PULSE_BEATS, chordBeats: ENERGY_PROFILES[this.energy].chordBeats,
+        rippleBeats: ENERGY_PROFILES[this.energy].rippleBeats },
       composition: AMBIENT_CHORDS.map(chord => chord.label).join(' · '), chord: this.chord,
       fruitNotes: Object.fromEntries(Object.entries(FRUIT_NOTES).map(([kind, { pitch, label }]) =>
         [kind, { pitch: clamp(pitch + 12, 72, 84), label: label.replace(/\d+$/, value => String(Number(value) + 1)) }])),

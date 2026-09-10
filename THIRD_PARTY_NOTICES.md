@@ -69,7 +69,7 @@ modeled firing rates, not recorded activity. Fruit attraction, hunger, feeding,
 rest and flight height are engineered behavior rules. Fruit kinds have equal
 attraction in the model. Olfactory circuitry, biological reward learning and
 musical feedback are not modeled. Ambient's Cmaj9, Am9, Fmaj9 and G6/9 progression,
-sixteen-beat chord durations, soft four-beat attacks and swarm-to-sound mappings
+eight/sixteen-beat chord durations, soft four-beat attacks, upper ripples and swarm-to-sound mappings
 are authored musical rules. The flies influence the arrangement and sound; they
 do not learn or originate the underlying progression. Fruit pads maps new feeding visits to authored
 pitches: banana C4 (MIDI 60), apple E4 (64), and grape G4 (67). Strings uses authored

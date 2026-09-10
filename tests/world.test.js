@@ -148,3 +148,94 @@ test('invalid world inputs are rejected and automatic drive can resume after zer
   world.setStimulus({ drive: null });
   assert.ok(run(world, 3000).distanceTravelled > 0.05);
 });
+
+test('energy increases travel and steering response without accelerating the neural clock', () => {
+  const distances = [];
+  for (const [energy, gain] of [['calm', 1], ['lively', 1.65], ['wild', 2.25]]) {
+    const world = new FlyWorld({ energy });
+    world.clearFruit();
+    const first = world.step();
+    const neuralClock = world.brain.timeMs;
+    const sim = world.brain.sim;
+    world.setEnergy(energy);
+    assert.equal(world.brain.sim, sim);
+    assert.equal(world.brain.timeMs, neuralClock);
+    const state = run(world, 5950);
+    assert.equal(state.energy, energy);
+    assert.equal(state.motionGain, gain);
+    assert.equal(world.brain.timeMs, 6000);
+    assert.equal(state.time, 6);
+    assert.ok(Number.isFinite(first.turnRate));
+    distances.push(state.distanceTravelled);
+  }
+  assert.ok(distances[1] > distances[0] * 1.4, 'lively travels materially farther in equal neural time');
+  assert.ok(distances[2] > distances[1] * 1.2, 'wild adds visible travel without a faster simulation clock');
+
+  const calm = new FlyWorld({ brain: mockBrain(0.2) });
+  const lively = new FlyWorld({ brain: mockBrain(0.2), energy: 'lively' });
+  const a = calm.step(), b = lively.step();
+  assert.ok(Math.abs(b.speed / a.speed - 1.65) < 1e-12);
+  assert.ok(Math.abs(b.turnRate / a.turnRate - 1.65) < 1e-12);
+});
+
+test('lively and wild measured circuits still reach fruit at feeding height', () => {
+  for (const energy of ['lively', 'wild']) {
+    for (const seed of [1337, 1, 42]) {
+      const world = new FlyWorld({ seed, energy, walkingIntervals: true });
+      while (world.time < 12 && !world.visits) {
+        const state = world.step();
+        for (const value of [state.x, state.y, state.height, state.hunger]) {
+          assert.ok(Number.isFinite(value) && value >= 0 && value <= 1);
+        }
+      }
+      assert.ok(world.visits > 0, `${energy} seed ${seed} reaches fruit`);
+      assert.equal(world.behavior, 'feeding');
+      assert.ok(world.height < 0.05);
+    }
+  }
+});
+
+test('energy changes remain silent with zero motor output or disconnected measured synapses', () => {
+  for (const world of [new FlyWorld({ brain: mockBrain(0) }), new FlyWorld()]) {
+    if (world.brain.sim) world.brain.sim.synapsesEnabled = false;
+    const initial = world.snapshot();
+    for (const energy of ['lively', 'wild', 'calm']) {
+      world.setEnergy(energy);
+      const state = run(world, 1000);
+      for (const key of ['x', 'y', 'heading', 'height', 'distanceTravelled']) assert.equal(state[key], initial[key]);
+      assert.equal(state.speed, 0);
+      assert.equal(state.turnRate, 0);
+      assert.equal(state.visits, 0);
+    }
+  }
+});
+
+test('energy is validated, persists through reset, and bounds meal and rest pacing', () => {
+  const world = new FlyWorld({ brain: mockBrain(0.2), walkingIntervals: true });
+  assert.equal(world.snapshot().energy, 'calm');
+  for (const energy of ['fast', '', null, 2, {}, ['wild']]) {
+    assert.throws(() => world.setEnergy(energy), /calm, lively or wild/);
+    assert.throws(() => new FlyWorld({ brain: mockBrain(), energy }), /calm, lively or wild/);
+  }
+  const meals = [];
+  for (const energy of ['calm', 'wild']) {
+    world.setEnergy(energy);
+    world.reset();
+    const first = run(world, 700);
+    world.reset();
+    assert.deepEqual(first, run(world, 700, 20));
+    world.x = world.fruits[0].x;
+    world.y = world.fruits[0].y;
+    world.height = 0;
+    world.behavior = 'feeding';
+    world.feedingId = world.fruits[0].id;
+    const start = world.time;
+    while (world.behavior === 'feeding') world.step();
+    meals.push(world.time - start);
+    assert.ok(world.restTime >= 1.8 / 1.4 && world.restTime <= 3.2);
+    assert.ok(world.hunger >= 0 && world.hunger < 0.2);
+    assert.ok(world.fruits[0].amount > 0 && world.fruits[0].amount <= 1);
+  }
+  assert.ok(meals[1] < meals[0]);
+  assert.ok(meals[1] >= meals[0] / 1.4 - 0.05, 'behavior pacing remains capped at 1.4');
+});

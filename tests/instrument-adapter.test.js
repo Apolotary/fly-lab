@@ -459,3 +459,19 @@ test('a failed clip write is retried even when the next recording contents are i
   await f.adapter.recordNotes(notes);
   assert.equal(attempts, 2);
 });
+
+test('ambient effect changes enter one SDK transaction before awaiting completion', async () => {
+  const f = fixture();
+  await f.adapter.prepare({ mode: 'ambient' });
+  let transactions = 0, inside = false, writes = 0;
+  f.context.withinTransaction = operation => {
+    transactions++; inside = true;
+    try { return operation(); } finally { inside = false; }
+  };
+  for (const control of Object.values(f.adapter.controlParameters)) {
+    control.setValue = async () => { assert.equal(inside, true); writes++; };
+  }
+  await f.adapter.modulate({ brightness: .6, space: .5, pan: -.2 });
+  assert.equal(transactions, 1);
+  assert.equal(writes, 3);
+});

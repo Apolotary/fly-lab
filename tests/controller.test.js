@@ -59,7 +59,7 @@ test('ambient performance time follows a delayed timer, freezes on pause, and su
   let now = 10_000;
   context.mock.method(Date, 'now', () => now);
   const { adapter, world } = fixture();
-  const controller = new FlyController(adapter, { world, instrumentMode: 'ambient', mode: 'live' });
+  const controller = new FlyController(adapter, { world, instrumentMode: 'ambient', mode: 'live', energy: 'calm' });
   await controller.action({ action: 'start' });
 
   now += 2500;
@@ -369,7 +369,7 @@ test('a failed SDK mode switch retains composer, recording and revision while re
   assert.equal(controller.snapshot().prepared, true);
 });
 
-test('ambient controls update at most twice per second and are applied before saving the performance', async () => {
+test('ambient controls update twice per second without rewriting the clip at that rate', async () => {
   const { controller, adapter, composer, calls } = fixture();
   const ambience = { brightness: .2, density: .3, space: .4, pan: -.1, activity: .2 };
   controller.instrumentMode = 'ambient';
@@ -382,12 +382,38 @@ test('ambient controls update at most twice per second and are applied before sa
   controller.tick(start + 550); await controller.pending;
   const controls = calls.filter(call => Array.isArray(call) && call[0] === 'modulate');
   assert.deepEqual(controls, [['modulate', ambience], ['modulate', ambience]]);
-  for (let index = 0; index < calls.length; index++) {
-    if (Array.isArray(calls[index]) && calls[index][0] === 'modulate') {
-      assert.equal(calls[index + 1][0], 'record', 'effect state belongs to the recorded performance update');
-    }
-  }
+  assert.equal(calls.filter(call => Array.isArray(call) && call[0] === 'record').length, 1);
+  controller.tick(start + 2050); await controller.pending;
+  assert.equal(calls.filter(call => Array.isArray(call) && call[0] === 'record').length, 2);
   await controller.action({ action: 'stop' });
+});
+
+test('energy and fresh fruit work during performance while preserving the recorded timeline', async () => {
+  const { adapter } = fixture();
+  const { FlyGarden } = await import('../src/garden.js');
+  const world = new FlyGarden({ count: 3 });
+  const controller = new FlyController(adapter, { world, instrumentMode: 'ambient' });
+  await controller.action({ action: 'start' });
+  controller.tick(controller.lastTick + 100);
+  await controller.pending;
+  const piece = controller.composer.notes, saved = structuredClone(piece), time = controller.performanceTime;
+  await controller.action({ action: 'energy', energy: 'wild' });
+  assert.equal(controller.running, true);
+  assert.equal(controller.snapshot().music.energy, 'wild');
+  assert.equal(controller.snapshot().brain.motionGain, 2.25);
+  assert.equal(controller.composer.notes, piece);
+  assert.deepEqual(piece, saved);
+  await controller.action({ action: 'refreshFruit' });
+  assert.equal(controller.world.fruits.length, 3);
+  assert.equal(controller.performanceTime, time);
+  assert.deepEqual(piece, saved);
+  await assert.rejects(controller.action({ action: 'energy', energy: 'turbo' }), /Choose/);
+  assert.equal(controller.energy, 'wild');
+  await controller.action({ action: 'stop' });
+  await controller.action({ action: 'mode', mode: 'fruit' });
+  await controller.action({ action: 'mode', mode: 'ambient' });
+  assert.equal(controller.composer.snapshot().energy, 'wild');
+  assert.equal(controller.composer.notes, piece);
 });
 
 test('failed ambient modulation stops MIDI before recording and hides SDK effect diagnostics', async context => {

@@ -32,6 +32,9 @@ export class LiveInstrumentAdapter {
     this.tail = next.catch(() => {});
     return next;
   }
+  writeBatch(operation) {
+    return this.context.withinTransaction ? this.context.withinTransaction(operation) : operation();
+  }
   song() {
     const song = this.context.application.song;
     if (this.songRef && song !== this.songRef) throw new Error('Live Set changed. Restart the fly for this Set.');
@@ -106,7 +109,7 @@ export class LiveInstrumentAdapter {
     const release = this.parameter(record.rawDevice, ['Ve Release', 'Amp Release', 'Amp Envelope Release Time']);
     const wet = this.parameter(record.reverb, ['Dry/Wet']);
     const decay = this.parameter(record.reverb, ['DecayTime', 'Decay Time']);
-    await finishWrites([
+    await this.writeBatch(() => finishWrites([
       // SDK parameters use normalized native ranges, not the displayed Hz/ms.
       this.setAmount(attack, ambient ? .58 : 0),
       this.setAmount(release, ambient ? .67 : .2),
@@ -116,7 +119,7 @@ export class LiveInstrumentAdapter {
       this.setAmount(decay, .6),
       ...(ambient ? [this.setAmount(this.parameter(record.rawDevice, ['Voices']), 1)] : []),
       record.track.mixer.volume.setValue(parameterValue(record.track.mixer.volume, ambient ? .7 : NEUTRAL_LEVEL)),
-    ]);
+    ]));
     this.controlParameters = ambient ? { brightness, space: wet, pan: record.track.mixer.panning } : {};
     if (!ambient) await this.setAmount(record.track.mixer.panning, .5);
     this.instrumentMode = mode;
@@ -150,11 +153,11 @@ export class LiveInstrumentAdapter {
     return this.enqueue(async () => {
       this.song();
       for (const key of ['brightness', 'space', 'pan']) if (!Number.isFinite(ambience[key])) throw new Error('Invalid ambient control.');
-      await finishWrites([
+      await this.writeBatch(() => finishWrites([
         this.setAmount(this.controlParameters.brightness, .4 + .45 * clamp(ambience.brightness, 0, 1)),
         this.setAmount(this.controlParameters.space, .28 + .38 * clamp(ambience.space, 0, 1)),
         this.setAmount(this.controlParameters.pan, .5 + clamp(ambience.pan, -1, 1) * .325),
-      ]);
+      ]));
     });
   }
   start() {

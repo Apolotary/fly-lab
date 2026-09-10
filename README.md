@@ -4,11 +4,13 @@
 
 Twelve simulated fruit flies walk, fly, seek fruit and feed in a small habitat.
 In the default **Ambient** mode, their collective movement changes the brightness,
-density, space and pan of a slow musical bed in Ableton. Fruit visits add bell-like
-accents. Place fruit and hear the performance change as the swarm moves.
+density, space and pan of a musical bed in Ableton. Fruit visits add bell-like
+accents. **Lively** is the default: faster body movement, five-second chord changes
+and rippling high notes shaped by the crowd. Switch **Calm / Lively / Wild** while
+playing, or press **Fresh fruit** to give the flies new destinations.
 
-The harmony and rhythm are authored: Cmaj9 → Am9 → Fmaj9 → G6/9, with sixteen beats
-per chord and soft attacks every four beats. The flies influence the performance;
+The harmony and rhythm are authored: Cmaj9 → Am9 → Fmaj9 → G6/9, with eight beats
+per chord in Lively/Wild, sixteen in Calm, and soft attacks every four beats. The flies influence the performance;
 they do not learn music or compose this progression. A quiet foundation continues
 when the flies are still.
 
@@ -107,11 +109,17 @@ window sharing. Keep the browser visible while recording.
 
 **Ambient** combines an authored musical foundation with the swarm's activity:
 
-- Cmaj9, Am9, Fmaj9 and G6/9 form a repeating progression, sixteen beats per chord.
+- Cmaj9, Am9, Fmaj9 and G6/9 repeat: eight beats per chord in Lively/Wild, sixteen in Calm.
 - Soft attacks every four beats keep a gentle foundation audible.
+- Lively adds an authored ripple every beat; Wild uses half-beats. Fly activity and
+  position shape its register, strength and chord-tone choice. Calm has no ripples.
 - Collective movement influences brightness, note density, spatial effects and pan.
   Denser voicings add the upper chord tones.
 - New feeding visits add fruit accents; continuing to feed does not repeat them.
+
+Energy changes the toy body's movement gain (1× / 1.65× / 2.25×), steering and
+behavior pacing. It does not speed up or replace the measured neural circuit.
+Fresh fruit changes the shared food layout without resetting the animals or notes.
 
 One generated sample supplies warm lower tones and brighter upper-register
 chimes through the same Simpler; the sound is not split across multiple tracks.

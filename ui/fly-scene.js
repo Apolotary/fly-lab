@@ -401,7 +401,10 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
         const altitude = clamp(state.height), flying = altitude > .08;
         if (running && !reducedMotion) model.phase += dt * (2.4 + mean * 5);
         const phase = model.phase, targetX = worldToScene(state.x ?? .5), targetZ = worldToScene(state.y ?? .5), targetY = altitude * 1.75;
-        const ease = model.initial || reducedMotion ? 1 : 1 - Math.exp(-dt * 20); model.initial = false;
+        // Smooth only between observed positions. We neither extrapolate past a
+        // sample nor speed up the model's neural output. Feeding contacts and a
+        // paused world stay exactly at their reported positions.
+        const ease = model.initial || reducedMotion || !running || state.behavior === 'feeding' || state.behavior === 'resting' ? 1 : 1 - Math.exp(-dt * 8); model.initial = false;
         fly.position.x += (targetX - fly.position.x) * ease; fly.position.z += (targetZ - fly.position.z) * ease; fly.position.y += (targetY - fly.position.y) * ease;
         const targetYaw = Math.PI / 2 - (Number.isFinite(state.heading) ? state.heading : 0);
         const delta = Math.atan2(Math.sin(targetYaw - fly.rotation.y), Math.cos(targetYaw - fly.rotation.y)); fly.rotation.y += delta * ease;
