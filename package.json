@@ -12,6 +12,7 @@
     "setup": "node scripts/setup.mjs",
     "start": "node scripts/start.mjs",
     "demo": "node src/demo.js",
+    "play": "node scripts/play.mjs",
     "train:dark": "node scripts/train-dark.mjs",
     "build": "node scripts/build.mjs",
     "test": "node --test",
