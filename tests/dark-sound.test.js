@@ -11,7 +11,7 @@ test('authored dark sound is deterministic PCM with headroom, smooth edges and a
     const path = await buildDark(root), wav = await readFile(path);
     await buildDark(root);
     assert.deepEqual(await readFile(path), wav, 'rebuilding must not create a different sound');
-    assert.ok(path.endsWith('/.local/audio/dark-lab.wav'));
+    assert.equal(path, join(root, '.local/audio/dark-lab.wav'));
     assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
     assert.equal(wav.toString('ascii', 8, 16), 'WAVEfmt ');
     assert.equal(wav.readUInt16LE(20), 1, 'PCM');
