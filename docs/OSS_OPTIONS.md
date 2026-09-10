@@ -24,7 +24,9 @@ The exact packaged demo targets NVIDIA machines: the [brain renderer](https://gi
 Ableton Fly combines [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly)'s
 JavaScript locomotor simulator and MaleCNS extract with
 [Three.js](https://github.com/mrdoob/three.js). An original miniature world supplies
-fruit locations and modeled behavior. The default **Fly Tombola** mode adds an
+fruit locations and modeled behavior. The default **Dark lab** mode advances one
+motor circuit and trains an original 70-weight musical readout using explicit
+MIDI-feature rewards and human preference buttons. **Fly Tombola** adds an
 original rotating hexagonal particle enclosure: each fly carries a note and wall
 impacts play it. **Ambient** lets twelve
 independent simulations influence an authored musical bed. Feeding visits add
@@ -35,35 +37,39 @@ or additional MIDI driver is required.
 | Part | Implementation in this project |
 | --- | --- |
 | Measured wiring | 1,045 selected neurons, 17,224 directed connections and 708,689 synaptic contacts. MIT simulator code; the particular MaleCNS extract is CC BY 4.0. |
-| Animal world | The standard launchers start twelve independent instances of the same measured motor graph, with shared fruit and different seeded inputs. Original rules supply exploration, equal fruit attraction, hunger, feeding, rest and flight height. Actual simulated motor output gates translation and turning. |
+| Animal world | Dark lab advances one active motor circuit; the other modes use twelve independent instances of the same measured motor graph, with shared fruit and different seeded inputs. Original rules supply exploration, equal fruit attraction, hunger, feeding, rest and flight height. Actual simulated motor output gates translation and turning. |
 | Visible body and instrument | Original articulated Three.js flies, fruit, wires, MIDI box and guitar geometry illustrate the simulation and its contacts. There are no electrical, foot-force or aerodynamic dynamics. |
-| Fly Tombola (default) | Original fixed-step particle physics in a rotating hexagon. Motor output nudges steering; launch momentum, gravity and moving-wall impulses are external forces. A wall impact plays the fly's scale note; no collisions means no notes. |
+| Dark lab (default) | Six motor outputs plus a bias feed 70 trainable weights selecting ten authored gestures. A REINFORCE-style update uses sixteen-second MIDI-feature rewards and More / Less feedback. Measured synapses stay fixed; there is no audio listening or biological reward-learning model. |
+| Fly Tombola | Original fixed-step particle physics in a rotating hexagon. Motor output nudges steering; launch momentum, gravity and moving-wall impulses are external forces. A wall impact plays the fly's scale note; no collisions means no notes. |
 | Ambient | An authored Cmaj9 → Am9 → Fmaj9 → G6/9 bed changes chord every eight beats in Lively/Wild or sixteen in Calm, with soft attacks every four beats. Lively/Wild add upper ripples every beat/half-beat. Collective movement affects note choice, density, brightness, space and pan. Feeding visits add higher-register accents. |
 | Fruit pads | A new feeding visit triggers the fruit's pitch: banana C4/60, apple E4/64, grape G4/67. Holding contact stays silent; leaving and revisiting can retrigger. |
 | Strings | Six strings have fixed pitches. Low-height crossings and landings trigger notes through a geometric body proxy; contact speed affects velocity. |
-| Live instrument | An original Swift bridge sends channel-1 MIDI through one port to one owned Fly Instrument track. Ambient uses one original locally generated sample in Simpler plus native Reverb. Warm tones and brighter upper-register accents share that instrument. Fruit pads and Strings use a local factory acoustic-guitar sample. |
+| Live instrument | An original Swift bridge sends channel-1 MIDI through one port to one owned Fly Instrument track. Ambient and Dark lab use different original locally generated samples in Simpler plus native Reverb. Fly Tombola, Fruit pads and Strings use a local factory acoustic-guitar sample. |
 | Reusable performance | Notes accumulate in an arrangement clip at 96 BPM; standard MIDI export also includes tempo. Live filter, pan and Reverb changes are not stored in that clip or MIDI file. Shared audio/video capture preserves those performed changes. The browser preview uses original synthesis. |
 
 This setup runs without a Python physics environment or GPU training job. It is
 an animal-driven virtual instrument: the software author chooses harmony, rhythm,
 geometry, tuning and control mappings. Ambient's quiet foundation continues even
-without fly motion. The flies change the performance rather than learning music
-or generating the underlying chord progression. Twelve model instances use one
+without fly motion. Dark lab's separate musical readout learns probabilities of
+authored gestures; the other modes have fixed musical mappings and do not learn
+the underlying chord progression. Twelve swarm model instances use one
 anatomical subset; they do not represent twelve separately measured connectomes.
 
 Mode switching is available while paused. It preserves recorded notes and resets
 the contact baseline, so an already-feeding fly does not retrigger on switching.
 Fruit pads and Strings preserve unsnapped contact timing and have no backing bed.
-Switching between Ambient and a contact mode also changes the sample and effects.
+Switching among Dark lab, Ambient and a contact mode also changes the sample and effects.
 MIDI replay uses the current instrument parameters. For a piano contact piece,
 select Fruit pads or Strings, pause, replace the instrument, and stay in that mode
 for the take. Restarting in a new empty Set rebuilds the default setup.
 
-Ambient's synthesis code is original and MIT licensed; generated audio stays local
+Ambient and Dark lab's synthesis code is original and MIT licensed; generated audio stays local
 and is excluded from Git. The factory guitar sample and proprietary Ableton SDK
 are supplied by the user's installation and are not redistributed.
 
-There is no musical reward, audio understanding, learned composition, or modeled
+Dark lab's musical reward is an authored MIDI-feature heuristic, not an audio
+listener or model of biological learning. Its method, local checkpoint and
+held-out results are in [DARK_LAB.md](DARK_LAB.md). There is no modeled learned
 fruit preference. Fruit location changes the artificial input and resulting
 movement; banana, apple and grape have equal attraction in these toy rules.
 

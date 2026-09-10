@@ -10,11 +10,12 @@ async function finishWrites(writes) {
 }
 
 export class LiveInstrumentAdapter {
-  constructor(context, { midi, samplePath, ambientSamplePath, resolveSimpler = device => device } = {}) {
+  constructor(context, { midi, samplePath, ambientSamplePath, darkSamplePath = ambientSamplePath, resolveSimpler = device => device } = {}) {
     this.context = context;
     this.midi = midi;
     this.samplePath = samplePath;
     this.ambientSamplePath = ambientSamplePath;
+    this.darkSamplePath = darkSamplePath;
     this.instrumentMode = 'fruit';
     this.controlParameters = {};
     this.parameterBounds = new WeakMap();
@@ -57,7 +58,7 @@ export class LiveInstrumentAdapter {
         if (!record.rawDevice) record.rawDevice = await record.track.insertDevice('Simpler', 0);
         if (!record.device) record.device = this.resolveSimpler(record.rawDevice);
         record.track.arm = false;
-        if (!record.sampleReady) { await record.device.replaceSample(mode === 'ambient' ? this.ambientSamplePath : this.samplePath); record.sampleReady = true; }
+        if (!record.sampleReady) { await record.device.replaceSample(this.sampleForMode(mode)); record.sampleReady = true; }
         if (!record.clip) record.clip = await record.track.createMidiClip(0, MAX_BEATS);
         record.clip.name = 'Ableton Fly · contact notes';
         await this.configureMode(mode, true);
@@ -96,12 +97,15 @@ export class LiveInstrumentAdapter {
   async setAmount(parameter, amount) {
     if (parameter) await this.setParameter(parameter, parameterValue(this.bounds(parameter), clamp(amount, 0, 1)));
   }
+  sampleForMode(mode) {
+    return mode === 'dark' ? this.darkSamplePath : mode === 'ambient' ? this.ambientSamplePath : this.samplePath;
+  }
   async configureMode(mode, sampleLoaded = false) {
     const record = this.record;
     if (!record) { this.instrumentMode = mode; return; }
-    const ambient = mode === 'ambient';
-    if (!sampleLoaded && (ambient !== (this.instrumentMode === 'ambient'))) {
-      await record.device.replaceSample(ambient ? this.ambientSamplePath : this.samplePath);
+    const dark = mode === 'dark', ambient = mode === 'ambient' || dark;
+    if (!sampleLoaded && this.sampleForMode(mode) !== this.sampleForMode(this.instrumentMode)) {
+      await record.device.replaceSample(this.sampleForMode(mode));
     }
     if (ambient && !record.reverb) record.reverb = await record.track.insertDevice('Reverb', 1);
     const brightness = this.parameter(record.rawDevice, ['Filter Freq', 'Filter Frequency', 'Filter Cutoff', 'Filter Cutoff Frequency']);
@@ -111,22 +115,22 @@ export class LiveInstrumentAdapter {
     const decay = this.parameter(record.reverb, ['DecayTime', 'Decay Time']);
     await this.writeBatch(() => finishWrites([
       // SDK parameters use normalized native ranges, not the displayed Hz/ms.
-      this.setAmount(attack, ambient ? .58 : 0),
-      this.setAmount(release, ambient ? .67 : .2),
-      this.setAmount(brightness, ambient ? .69 : 1),
+      this.setAmount(attack, dark ? .62 : ambient ? .58 : 0),
+      this.setAmount(release, dark ? .75 : ambient ? .67 : .2),
+      this.setAmount(brightness, dark ? .5 : ambient ? .69 : 1),
       this.setAmount(this.parameter(record.reverb, ['Device On']), ambient ? 1 : 0),
-      this.setAmount(wet, ambient ? .42 : 0),
-      this.setAmount(decay, .6),
+      this.setAmount(wet, dark ? .55 : ambient ? .42 : 0),
+      this.setAmount(decay, dark ? .7 : .6),
       ...(ambient ? [this.setAmount(this.parameter(record.rawDevice, ['Voices']), 1)] : []),
-      record.track.mixer.volume.setValue(parameterValue(record.track.mixer.volume, ambient ? .7 : NEUTRAL_LEVEL)),
+      record.track.mixer.volume.setValue(parameterValue(record.track.mixer.volume, dark ? .67 : ambient ? .7 : NEUTRAL_LEVEL)),
     ]));
     this.controlParameters = ambient ? { brightness, space: wet, pan: record.track.mixer.panning } : {};
     if (!ambient) await this.setAmount(record.track.mixer.panning, .5);
     this.instrumentMode = mode;
-    record.clip.name = mode === 'tombola' ? 'Ableton Fly · fly tombola' : ambient ? 'Ableton Fly · ambient garden' : 'Ableton Fly · contact notes';
+    record.clip.name = dark ? 'Ableton Fly · dark lab' : mode === 'tombola' ? 'Ableton Fly · fly tombola' : ambient ? 'Ableton Fly · ambient garden' : 'Ableton Fly · contact notes';
   }
   setMode(mode) {
-    if (!['ambient', 'fruit', 'strings', 'tombola'].includes(mode)) return Promise.reject(new Error('Unknown instrument mode.'));
+    if (!['ambient', 'dark', 'fruit', 'strings', 'tombola'].includes(mode)) return Promise.reject(new Error('Unknown instrument mode.'));
     return this.enqueue(async () => {
       this.song();
       this.midi?.panic();
@@ -149,14 +153,15 @@ export class LiveInstrumentAdapter {
     });
   }
   modulate(ambience) {
-    if (this.instrumentMode !== 'ambient' || !this.prepared || !ambience) return Promise.resolve();
+    if (!['ambient', 'dark'].includes(this.instrumentMode) || !this.prepared || !ambience) return Promise.resolve();
     return this.enqueue(async () => {
       this.song();
       for (const key of ['brightness', 'space', 'pan']) if (!Number.isFinite(ambience[key])) throw new Error('Invalid ambient control.');
+      const dark = this.instrumentMode === 'dark';
       await this.writeBatch(() => finishWrites([
-        this.setAmount(this.controlParameters.brightness, .4 + .45 * clamp(ambience.brightness, 0, 1)),
-        this.setAmount(this.controlParameters.space, .28 + .38 * clamp(ambience.space, 0, 1)),
-        this.setAmount(this.controlParameters.pan, .5 + clamp(ambience.pan, -1, 1) * .325),
+        this.setAmount(this.controlParameters.brightness, (dark ? .26 : .4) + (dark ? .38 : .45) * clamp(ambience.brightness, 0, 1)),
+        this.setAmount(this.controlParameters.space, (dark ? .42 : .28) + (dark ? .32 : .38) * clamp(ambience.space, 0, 1)),
+        this.setAmount(this.controlParameters.pan, .5 + clamp(ambience.pan, -1, 1) * (dark ? .25 : .325)),
       ]));
     });
   }

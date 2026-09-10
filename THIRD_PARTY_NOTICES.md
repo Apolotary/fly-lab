@@ -29,8 +29,11 @@ no Teenage Engineering artwork, sounds or code are included.
 Ambient mode maps collective movement to performance controls over an
 authored musical foundation, with accents from feeding visits. Fruit pads uses
 feeding-contact rules, and Strings uses geometric string-contact tests to generate
-MIDI notes. The standard launchers start twelve flies, each with independent state
-and seeded stimulation using the same measured graph, with shared fruit. These
+MIDI notes. The default Dark lab advances one motor circuit and feeds its six
+outputs to an original trainable musical readout. Its 70 readout weights change;
+the measured circuit's anatomy and simulation parameters stay fixed. Other modes
+use twelve flies, each with independent state and seeded stimulation using the
+same measured graph, with shared fruit. These
 are copies of one anatomical subset, not twelve separate connectomes. The
 displayed fly illustrates that simulated state. It does not reproduce
 DesktopFly's articulated body or its female FlyWire brain model.
@@ -73,8 +76,11 @@ with the dataset's coordinate scale of 8 nm per unit. Neurons without positions
 are omitted from the view but retained in the simulation. Point colors show
 modeled firing rates, not recorded activity. Fruit attraction, hunger, feeding,
 rest and flight height are engineered behavior rules. Fruit kinds have equal
-attraction in the model. Olfactory circuitry, biological reward learning and
-musical feedback are not modeled. Ambient's Cmaj9, Am9, Fmaj9 and G6/9 progression,
+attraction in the model. Olfactory circuitry and biological reward learning are
+not modeled. Dark lab adds an engineered MIDI-feature reward and human preference
+feedback to a musical readout; it does not listen to audio or modify biological
+synapses. Its authored gestures and scoring choices are documented in
+[DARK_LAB.md](docs/DARK_LAB.md). Ambient's Cmaj9, Am9, Fmaj9 and G6/9 progression,
 eight/sixteen-beat chord durations, soft four-beat attacks, upper ripples and swarm-to-sound mappings
 are authored musical rules. The flies influence the arrangement and sound; they
 do not learn or originate the underlying progression. Fruit pads maps new feeding visits to authored
@@ -87,19 +93,26 @@ The upstream code license's older blanket data note is superseded for this
 MaleCNS file by its [specific data license](https://github.com/DenisSergeevitch/desktop-fly/blob/32b00011e83c3dc85fa3ea0b3934155b04f1635d/data/DATA_LICENSE.md).
 
 
-## Native MIDI bridge, ambient synthesis and preview instrument
+## Native MIDI bridge, original synthesis and musical readout
 
 `native/midi-bridge.swift` and its JavaScript wrapper are original MIT-licensed
 project code. They use the CoreMIDI and Foundation frameworks provided by macOS;
 those Apple frameworks are not redistributed. The locally compiled bridge
 binary and compiler cache are excluded from Git.
 
-Ambient's original waveform is generated locally by MIT-licensed project code.
+Ambient and Dark lab's original waveforms are generated locally by MIT-licensed project code.
 The generation code is included; generated audio assets are excluded from Git.
 Live plays the sample through Simpler and native Reverb. This waveform contains
 no copied recordings or third-party samples. Harmony, soft attacks, bell-like
 fruit accents, and brightness/density/space/pan mappings are original musical
 design choices.
+
+Dark lab's readout, training script and MIDI-feature reward are original project
+code. The REINFORCE algorithm family is credited to
+[Ronald J. Williams (1992)](https://doi.org/10.1007/BF00992696); no paper text or
+third-party training code is copied. Training checkpoints and evaluation artifacts
+remain local and are excluded from Git. The model selects among authored gestures;
+it is not a biologically validated plasticity model or an audio listener.
 
 The browser preview instrument is an original oscillator-based sound, generated
 locally through the Web Audio API. It contains no recorded piano samples.
@@ -110,7 +123,7 @@ The Ableton Extensions SDK is proprietary and supplied by the user during local
 setup. Its package archives, extracted packages and compiled extension bundles
 are excluded from Git. No SDK source or documentation is redistributed here.
 
-Fruit pads and Strings load an acoustic-guitar sample from the user's installed
+Fly Tombola, Fruit pads and Strings load an acoustic-guitar sample from the user's installed
 Ableton factory content into Simpler. The sample remains local and is not copied
 into this repository, bundled, uploaded or distributed with MIDI exports. Ableton
 software and factory content retain their respective license terms. This project

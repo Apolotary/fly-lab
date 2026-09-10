@@ -6,8 +6,12 @@ guitars and basses; their contact with the strings generated sound as they moved
 freely. Visitors’ presence also changed the birds’ behavior.
 [Primary exhibition description](https://copenhagencontemporary.org/en/celeste-boursier-mougenot/).
 
-Our independent digital adaptation now starts with twelve simulated flies in a
-shared fruit habitat. **Fly Tombola**, the default, assigns a note to each fly in a
+Our independent digital adaptation now starts with **Dark lab**: one simulated
+motor circuit drives a trainable readout of authored musical gestures. Explicit
+musical preferences and user feedback train that readout, while the measured
+anatomy stays fixed. See [Dark lab's method and limits](DARK_LAB.md).
+The other modes use twelve simulated flies in a shared fruit habitat.
+**Fly Tombola** assigns a note to each fly in a
 rotating chamber; wall collisions trigger the notes. **Ambient** gives them an authored musical
 foundation to influence through their collective movement and fruit visits.
 **Fruit pads** makes a new feeding visit audible, while **Strings** retains six
@@ -50,17 +54,19 @@ play guitars.
 
 ## The inexpensive implementation
 
-The project combines independent copies of a small spiking motor circuit with a
-simple shared environment and musical mappings:
+The project combines a small spiking motor circuit with a simple environment
+and musical mappings. Dark lab advances one active circuit; the other modes use
+independent copies:
 
 ```text
 fruit locations + exploration rules
         ↓ artificial descending input
-twelve independent copies of one measured motor circuit
+one measured motor circuit, copied independently in swarm modes
         ↓ simulated motor activity gates movement
 virtual movement + feeding behavior
         ↓ chosen musical mode
 Fly Tombola: toy physics + motor steering → wall impacts → each fly's note
+Dark lab: motor activity → trainable readout → authored gestures + musical reward
 Ambient: collective movement + fruit visits → authored bed + modulation
 Fruit pads / Strings: feeding visit OR low string contact → MIDI notes
         ↓
@@ -78,8 +84,8 @@ Fruit attraction, hunger, wandering and feeding pauses are engineered behavior
 rules around this motor circuit. This subset does not supply a validated
 olfactory system or reward-learning model. Changing fruit can therefore change
 the artificial input, trajectory and resulting notes; it cannot demonstrate a
-real fly's favorite fruit or an acquired taste for the instrument. No musical reward is
-fed back into the circuit.
+real fly's favorite fruit or an acquired taste for the instrument. Dark lab's
+musical reward updates a separate readout; it is not fed back into the motor circuit.
 
 In **Ambient**, Cmaj9 → Am9 → Fmaj9 → G6/9 is an authored progression. Chords last
 eight beats in Lively/Wild or sixteen in Calm; soft attacks occur every four beats.
@@ -111,8 +117,8 @@ not a biomechanical or string-force simulation.
 Fruit pads and Strings retain unsnapped contact timing. Switching modes is allowed only while
 paused, preserves recorded notes, and establishes a fresh contact baseline. A
 fly already feeding will not retrigger merely because the mode changed. The
-mode also configures the sound: Ambient uses the original synthesized sample and
-movement modulation; Fruit pads and Strings use a local factory acoustic-guitar
+mode also configures the sound: Dark lab and Ambient use different original
+synthesized samples and live effects; Fly Tombola, Fruit pads and Strings use a local factory acoustic-guitar
 sample. The user can replace the latter with a piano for a contact-only piece.
 Notes are stored in the clip; MIDI export also includes tempo. Live filter, pan
 and Reverb changes require audio/video capture to preserve the performed sound.

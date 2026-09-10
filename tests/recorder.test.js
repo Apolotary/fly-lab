@@ -150,3 +150,23 @@ test('a Tombola take records its current physics and scale without ambient or fr
   assert.ok(!f.labels.some(label => /AUTHORED|BANANA C4|SIX STRINGS/.test(label)));
   recorder.stop(); await Promise.resolve();
 });
+
+test('a Dark lab take exposes learned-readout scores without claiming biological musical learning', async context => {
+  const f = fixture(context);
+  let enabled = true;
+  const recorder = f.create({
+    getState: () => ({ mode: 'live', running: true, brain: { flyCount: 1 }, music: { instrumentMode: 'dark', noteCount: 12, tempo: 60,
+      training: { enabled, updates: 4, lastScore: .72, weightChange: .125 } } }),
+    video: { srcObject: {}, readyState: 2, videoWidth: 1200, videoHeight: 800 },
+  });
+  recorder.start();
+  assert.ok(f.labels.includes('DARK LAB · ONE FLY'));
+  assert.ok(f.labels.some(label => label.includes('1 FLY · NIGHT GARDEN')));
+  assert.ok(f.labels.some(label => label.includes('PHRASE SCORE 72%') && label.includes('4 UPDATES') && label.includes('WEIGHT MOVEMENT 0.125')));
+  assert.ok(f.labels.includes('TRAINING MUSICAL READOUT'));
+  assert.ok(f.labels.some(label => label.includes('AUTHORED PREFERENCES, NOT AUDIO LISTENING')));
+  assert.ok(!f.labels.some(label => /BANANA C4|SIX STRINGS|FLY TOMBOLA|AMBIENT SWARM/.test(label)));
+  enabled = false; recorder.draw();
+  assert.ok(f.labels.includes('FROZEN MUSICAL READOUT'));
+  recorder.stop(); await Promise.resolve();
+});

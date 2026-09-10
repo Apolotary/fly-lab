@@ -4,16 +4,27 @@ import { FruitComposer } from './fruit-instrument.js';
 import { AmbientComposer } from './ambient-instrument.js';
 import { FlyTombola } from './tombola-world.js';
 import { TombolaComposer, TOMBOLA_SCALES } from './tombola-instrument.js';
+import { DarkComposer } from './dark-instrument.js';
 
 function makeComposer(mode, energy = 'lively', scale = 'pentatonic') {
-  if (!['ambient', 'fruit', 'strings', 'tombola'].includes(mode)) throw new Error('Choose Fly Tombola, Ambient, Fruit pads or Strings.');
-  return mode === 'tombola' ? new TombolaComposer({ scale }) : mode === 'ambient' ? new AmbientComposer({ energy }) : mode === 'fruit' ? new FruitComposer() : new StringComposer();
+  if (!['dark', 'ambient', 'fruit', 'strings', 'tombola'].includes(mode)) throw new Error('Choose Dark lab, Fly Tombola, Ambient, Fruit pads or Strings.');
+  return mode === 'dark' ? new DarkComposer() : mode === 'tombola' ? new TombolaComposer({ scale }) : mode === 'ambient' ? new AmbientComposer({ energy }) : mode === 'fruit' ? new FruitComposer() : new StringComposer();
 }
 
 export class FlyController {
-  constructor(adapter, { mode = 'demo', world = new FlyGarden(), composer, instrumentMode = 'fruit', energy = 'lively' } = {}) {
+  constructor(adapter, { mode = 'demo', world = new FlyGarden(), composer, instrumentMode = 'fruit', energy = 'lively', darkCheckpoint, saveLearning } = {}) {
     if (!['calm', 'lively', 'wild'].includes(energy)) throw new Error('Choose Calm, Lively or Wild.');
     this.garden = world instanceof FlyTombola ? world.garden : world;
+    this.darkWorld = null;
+    this.darkComposer = null;
+    this.darkCheckpoint = darkCheckpoint;
+    this.saveLearning = saveLearning;
+    if (instrumentMode === 'dark') {
+      this.darkWorld = this.garden instanceof FlyGarden && this.garden.count === 1 ? this.garden : new FlyGarden({count:1,seed:404});
+      this.darkComposer = composer ?? new DarkComposer({learnerState:darkCheckpoint?.learner,report:darkCheckpoint?.report});
+      world = this.darkWorld;
+      composer = this.darkComposer;
+    }
     if (instrumentMode === 'tombola' && !(world instanceof FlyTombola)) world = new FlyTombola({ garden: this.garden });
     this.tombolaSettings = {};
     this.tombolaScale = 'pentatonic';
@@ -47,11 +58,17 @@ export class FlyController {
   }
   heartbeat() { this.lastSeen = Date.now(); }
   midiFile() { return this.composer.midiFile(); }
+  async persistLearning() {
+    if (this.darkComposer && this.saveLearning) {
+      try {await this.saveLearning(this.darkComposer.exportLearning());}
+      catch(error) {console.error('Dark lab checkpoint failed:',error);throw new Error('Learning changed, but its local checkpoint could not be saved.');}
+    }
+  }
   async action(input) {
     if (this.closing) throw new Error('The fly is shutting down.');
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected an action object.');
     const { action } = input;
-    if (!['prepare', 'start', 'stop', 'panic', 'stimulus', 'fruit', 'clearFruit', 'refreshFruit', 'mode', 'energy', 'tombola', 'scale'].includes(action)) throw new Error('Unknown action.');
+    if (!['prepare', 'start', 'stop', 'panic', 'stimulus', 'fruit', 'clearFruit', 'refreshFruit', 'mode', 'energy', 'tombola', 'scale', 'learning', 'reward'].includes(action)) throw new Error('Unknown action.');
     if (this.busy && action === 'panic') {
       this.running = false;
       this.adapter.midi?.panic();
@@ -61,10 +78,12 @@ export class FlyController {
     if (this.busy) throw new Error('Still finishing the previous action.');
     if (action === 'mode') {
       if (this.running) throw new Error('Pause the flies before changing instruments.');
-      if (!['ambient', 'fruit', 'strings', 'tombola'].includes(input.mode)) throw new Error('Choose Fly Tombola, Ambient, Fruit pads or Strings.');
+      if (!['dark', 'ambient', 'fruit', 'strings', 'tombola'].includes(input.mode)) throw new Error('Choose Dark lab, Fly Tombola, Ambient, Fruit pads or Strings.');
       if (input.mode === this.instrumentMode) return this.snapshot();
       if (input.mode === 'tombola' && !(this.garden instanceof FlyGarden)) throw new Error('Fly Tombola needs a fly garden.');
-      const next = makeComposer(input.mode, this.energy, this.tombolaScale);
+      const next = input.mode === 'dark'
+        ? this.darkComposer ?? new DarkComposer({learnerState:this.darkCheckpoint?.learner,report:this.darkCheckpoint?.report})
+        : makeComposer(input.mode, this.energy, this.tombolaScale);
       next.notes = this.composer.notes;
       next.complete = this.composer.complete;
       this.busy = true;
@@ -77,16 +96,31 @@ export class FlyController {
         throw new Error(this.error);
       }
       finally { this.busy = false; finishMode(); }
-      if (input.mode === 'tombola') {
+      if (input.mode === 'dark') {
+        this.darkWorld ??= new FlyGarden({count:1,seed:404});
+        this.darkWorld.setEnergy(this.energy);
+        this.world = this.darkWorld;
+        this.darkComposer = next;
+      } else if (input.mode === 'tombola') {
         this.world = new FlyTombola({ garden: this.garden });
         this.world.configure(this.tombolaSettings);
       } else this.world = this.garden;
+      this.world.setEnergy?.(this.energy);
       next.prime?.(this.musicWorld());
       this.composer = next;
       this.instrumentMode = input.mode;
       this.modeRevision++;
       this.error = null;
-      this.addEvent(input.mode === 'tombola' ? 'Fly Tombola: each fly carries a note. Wall hits play it; harder impacts play louder.' : input.mode === 'ambient' ? 'Ambient garden: authored harmony, performed through fly movement and fruit visits.' : input.mode === 'fruit' ? 'Fruit pads: banana C, apple E, grapes G. One note per visit.' : 'Strings selected. Low string contacts play notes; earlier notes are kept.');
+      await this.persistLearning();
+      this.addEvent(input.mode === 'dark' ? 'Dark lab: one motor circuit, a trainable musical readout, and authored phrase rewards.' : input.mode === 'tombola' ? 'Fly Tombola: each fly carries a note. Wall hits play it; harder impacts play louder.' : input.mode === 'ambient' ? 'Ambient garden: authored harmony, performed through fly movement and fruit visits.' : input.mode === 'fruit' ? 'Fruit pads: banana C, apple E, grapes G. One note per visit.' : 'Strings selected. Low string contacts play notes; earlier notes are kept.');
+      return this.snapshot();
+    }
+    if (action === 'learning' || action === 'reward') {
+      if (this.instrumentMode !== 'dark') throw new Error('Choose Dark lab before training its musical readout.');
+      if (action === 'learning') this.composer.setLearning(input.enabled);
+      else this.composer.reward(input.value);
+      await this.persistLearning();
+      this.addEvent(action === 'learning' ? (input.enabled ? 'Musical readout learning enabled. Anatomical wiring remains fixed.' : 'Learning frozen. The saved readout keeps performing.') : (input.value>0 ? 'Preference reward: more like the last choice.' : 'Preference reward: less like the last choice.'));
       return this.snapshot();
     }
     if (action === 'tombola') {
@@ -144,7 +178,7 @@ export class FlyController {
         this.lastModulation = 0;
         this.lastTick = Date.now();
         this.heartbeat();
-        this.addEvent(this.instrumentMode === 'tombola' ? 'Fly Tombola playing. Spin, gravity and bounce change the collisions; fruit attracts the flies.' : this.instrumentMode === 'ambient' ? 'Ambient garden playing. Flies shape the sound; fruit visits add high accents.' : this.instrumentMode === 'fruit' ? 'Exploring. A fruit visit plays its note; feeding stays quiet afterward.' : 'Exploring. Flies touching strings make notes; free flight is silent.');
+        this.addEvent(this.instrumentMode === 'dark' ? 'Dark lab playing. One circuit chooses through a trainable readout; each 16-second phrase receives an authored score.' : this.instrumentMode === 'tombola' ? 'Fly Tombola playing. Spin, gravity and bounce change the collisions; fruit attracts the flies.' : this.instrumentMode === 'ambient' ? 'Ambient garden playing. Flies shape the sound; fruit visits add high accents.' : this.instrumentMode === 'fruit' ? 'Exploring. A fruit visit plays its note; feeding stays quiet afterward.' : 'Exploring. Flies touching strings make notes; free flight is silent.');
       } else {
         try { await this.adapter.recordNotes(this.composer.notes); }
         finally {
@@ -152,6 +186,7 @@ export class FlyController {
           else await this.adapter.stop();
         }
         this.addEvent(action === 'panic' ? 'Instrument muted and all notes released.' : 'Flies paused. Notes saved in Live; press Play there to replay, or Save MIDI.');
+        await this.persistLearning();
       }
       this.error = null;
     } catch (error) {
@@ -197,7 +232,7 @@ export class FlyController {
       if (this.composer.complete) { this.action({ action: 'stop' }).catch(() => {}); return; }
     } catch (error) { this.pending = this.fail(error); return; }
     const saveNotes = now - this.lastSave >= 2000;
-    const modulate = this.instrumentMode === 'ambient' && now - this.lastModulation >= 500;
+    const modulate = ['ambient','dark'].includes(this.instrumentMode) && now - this.lastModulation >= 500;
     if ((!saveNotes && !modulate) || this.saving) return;
     if (saveNotes) this.lastSave = now;
     if (modulate) this.lastModulation = now;
@@ -217,6 +252,6 @@ export class FlyController {
     await this.actionDone;
     this.running = false;
     await this.pending;
-    try { await this.adapter.recordNotes(this.composer.notes); } finally { await this.adapter.close(); }
+    try { await this.adapter.recordNotes(this.composer.notes); await this.persistLearning(); } finally { await this.adapter.close(); }
   }
 }

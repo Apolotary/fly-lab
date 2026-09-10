@@ -61,7 +61,7 @@ function fixture() {
     async close() { calls.push(['close']); this.connected = false; },
   };
   const context = { application: { song } };
-  const adapter = new LiveInstrumentAdapter(context, { midi, samplePath: '/local/instrument.wav', ambientSamplePath: '/local/ambient.wav' });
+  const adapter = new LiveInstrumentAdapter(context, { midi, samplePath: '/local/instrument.wav', ambientSamplePath: '/local/ambient.wav', darkSamplePath: '/local/dark.wav' });
   return { adapter, midi, context, song, created, calls, failures, unrelated };
 }
 
@@ -244,6 +244,75 @@ test('ambient preparation loads the authored sample and exposes only supported e
   assert.deepEqual(f.adapter.snapshot().liveControls, { brightness: true, space: true, pan: true });
   assert.match(track.clips[0].name, /ambient/i);
   assert.doesNotMatch(JSON.stringify(f.adapter.snapshot()), /\/local\//);
+});
+
+test('dark lab loads its own sound with normalized dark effects on one owned track', async () => {
+  const f = fixture();
+  await f.adapter.prepare({ mode: 'dark' });
+  const track = f.created[0], [simpler, reverb] = track.devices;
+  const value = (device, name) => device.parameters.find(parameter => parameter.name === name).value;
+  assert.equal(f.created.length, 1);
+  assert.equal(simpler.samplePath, '/local/dark.wav');
+  assert.equal(simpler.loads, 1);
+  assert.equal(value(simpler, 'Ve Attack'), .62);
+  assert.equal(value(simpler, 'Ve Release'), .75);
+  assert.equal(value(simpler, 'Filter Freq'), .5);
+  assert.equal(value(reverb, 'Device On'), 1);
+  assert.equal(value(reverb, 'Dry/Wet'), .55);
+  assert.equal(value(reverb, 'Decay Time'), .7);
+  assert.equal(track.mixer.volume.value, .67);
+  assert.equal(track.clips[0].name, 'Ableton Fly · dark lab');
+  assert.equal(track.arm, false);
+  assert.equal(f.adapter.instrumentMode, 'dark');
+  assert.deepEqual(f.adapter.snapshot().liveControls, { brightness: true, space: true, pan: true });
+  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
+});
+
+test('switching between dark, ambient and contact sounds reloads the correct source without replacing a recording', async () => {
+  const f = fixture();
+  await f.adapter.prepare({ mode: 'dark' });
+  const track = f.created[0], [simpler, reverb] = track.devices, clip = track.clips[0];
+  const originalNotes = [{ pitch: 48, startTime: 0, duration: 3, velocity: 50 }];
+  clip.notes = originalNotes;
+  const expected = [
+    ['ambient', '/local/ambient.wav'], ['dark', '/local/dark.wav'],
+    ['fruit', '/local/instrument.wav'], ['dark', '/local/dark.wav'],
+    ['strings', '/local/instrument.wav'], ['dark', '/local/dark.wav'],
+    ['tombola', '/local/instrument.wav'], ['dark', '/local/dark.wav'],
+  ];
+  for (const [mode, path] of expected) {
+    await f.adapter.setMode(mode);
+    assert.equal(simpler.samplePath, path);
+    assert.equal(f.adapter.instrumentMode, mode);
+    assert.equal(clip.notes, originalNotes);
+    assert.equal(track.arm, false);
+  }
+  assert.equal(simpler.loads, expected.length + 1);
+  assert.equal(f.created.length, 1);
+  assert.deepEqual(track.devices, [simpler, reverb]);
+  assert.deepEqual(track.clips, [clip]);
+  await f.adapter.setMode('dark');
+  assert.equal(simpler.loads, expected.length + 1, 'selecting the same source avoids a sample reload');
+  assert.deepEqual(f.unrelated, { name: 'Fly Instrument', arm: true, mute: false });
+});
+
+test('dark modulation is bounded, changes the readout controls and validates all inputs before writes', async () => {
+  const f = fixture();
+  await f.adapter.prepare({ mode: 'dark' });
+  const controls = f.adapter.controlParameters;
+  await f.adapter.modulate({ brightness: 100, space: -100, pan: 100 });
+  assert.ok(Math.abs(controls.brightness.value - .64) < 1e-10);
+  assert.ok(Math.abs(controls.space.value - .42) < 1e-10);
+  assert.equal(controls.pan.value, .75);
+  await f.adapter.modulate({ brightness: -100, space: 100, pan: -100 });
+  assert.equal(controls.brightness.value, .26);
+  assert.equal(controls.space.value, .74);
+  assert.equal(controls.pan.value, .25);
+  const before = f.calls.length;
+  for (const key of ['brightness', 'space', 'pan']) {
+    await assert.rejects(f.adapter.modulate({ brightness: .5, space: .5, pan: 0, [key]: NaN }), /Invalid ambient/);
+  }
+  assert.equal(f.calls.length, before);
 });
 
 test('mode changes reuse the owned track and recording while restoring contact instrument settings', async () => {

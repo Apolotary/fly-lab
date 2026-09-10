@@ -121,8 +121,8 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
   const direction = new THREE.Vector3();
   function connect(o, a, b) { direction.subVectors(b, a); o.position.copy(a).add(b).multiplyScalar(.5); o.scale.set(o.userData.radius, direction.length(), o.userData.radius); o.quaternion.setFromUnitVectors(UP, direction.normalize()); }
   const stage = new THREE.Group(); scene.add(stage);
-  const stringStage = new THREE.Group(), gardenStage = new THREE.Group(), tombolaStage = new THREE.Group();
-  stage.add(stringStage, gardenStage, tombolaStage); tombolaStage.visible = false;
+  const stringStage = new THREE.Group(), gardenStage = new THREE.Group(), tombolaStage = new THREE.Group(), darkStage = new THREE.Group();
+  stage.add(stringStage, gardenStage, tombolaStage, darkStage); tombolaStage.visible = darkStage.visible = false;
   // A deliberately broad, original six-string instrument: every sounding
   // segment occupies the same normalized world coordinates as contact detection.
   const WORLD = 6.6;
@@ -172,6 +172,19 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     sprite.scale.set(.94, .35, 1); return sprite;
   }
   const midiLabel = labelSprite('MIDI', '#b8ddc8'); midiLabel.scale.set(.65, .245, 1); midiLabel.position.set(3.79, .54, 2.39); gardenStage.add(midiLabel);
+  // An original night garden for the learned musical readout. This stage is
+  // decorative; the fly and the separate measured circuit retain their data.
+  box(darkStage, material(0x211a2c, {roughness:.83}), [0,-.14,0], [6.85,.28,6.85]);
+  for (const z of [-3.42,3.42]) box(darkStage, material(0x5a4568), [0,-.01,z], [6.96,.10,.06]);
+  for (const x of [-3.45,3.45]) box(darkStage, material(0x5a4568), [x,-.01,0], [.06,.10,6.90]);
+  for (const radius of [1.75,2.60,3.24]) {
+    const ring=mesh(new THREE.TorusGeometry(radius,.011,4,80),material(0x665174,{emissive:0x251632,emissiveIntensity:.4}),darkStage);
+    ring.rotation.x=-Math.PI/2;ring.position.y=.008;
+  }
+  const darkMoon=mesh(new THREE.CircleGeometry(.37,40),material(0xc1acd0,{emissive:0x7c4f9c,emissiveIntensity:.35}),darkStage);
+  darkMoon.rotation.x=-Math.PI/2;darkMoon.position.set(-2.90,.012,-2.90);
+  const darkName=labelSprite('DARK LAB','#d8baee');darkName.scale.set(1.05,.39,1);darkName.position.set(0,.15,3.83);darkStage.add(darkName);
+  const darkLamp=ellipsoid(darkStage,material(0xb791d3,{emissive:0x9870b5,emissiveIntensity:.4}),[3.75,.06,2.7],[.12,.06,.12]);
   // This chamber is a view of the server's collision geometry. Its six walls
   // rotate with the reported physics angle; the renderer never invents bounces.
   const chamber = new THREE.Group(); tombolaStage.add(chamber);
@@ -289,7 +302,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     const ids = new Set();
     for (const [index, item] of fruits.entries()) {
       ids.add(item.id);
-      const note = music.fruitNotes?.[item.kind] ?? (music.instrumentMode === 'ambient' ? fallbackAmbientNotes[item.kind] : fallbackFruitNotes[item.kind]), noteLabel = note?.label ?? 'NOTE';
+      const note = music.fruitNotes?.[item.kind] ?? (music.instrumentMode === 'ambient' ? fallbackAmbientNotes[item.kind] : fallbackFruitNotes[item.kind]), noteLabel = music.instrumentMode === 'dark' ? 'FRUIT' : note?.label ?? 'NOTE';
       let visual = fruitObjects.get(item.id);
       if (!visual || visual.kind !== item.kind || visual.labelText !== noteLabel) {
         if (visual) disposeFruit(visual);
@@ -430,8 +443,13 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
     setFruitKind(kind) { placement.material.color.set(fruitMaterials[kind]?.color || fruitMaterials.banana.color); },
     update(brain = {}, running = false, music = {}) {
       const now = performance.now() / 1000, dt = Math.min(.07, previous ? now - previous : .033); previous = now;
-      const mode = ['strings','ambient','tombola'].includes(music.instrumentMode) ? music.instrumentMode : 'fruit', tombolaMode=mode==='tombola';
+      const mode = ['strings','ambient','tombola','dark'].includes(music.instrumentMode) ? music.instrumentMode : 'fruit', tombolaMode=mode==='tombola', darkMode=mode==='dark';
       if(tombolaMode!==(previousMode==='tombola')){camera.zoom=tombolaMode?1.17:1;camera.updateProjectionMatrix();}
+      if(darkMode!==(previousMode==='dark')){
+        renderer.setClearColor(darkMode?0x08060d:0x050606);
+        key.color.set(darkMode?0xd2c4ed:0xffe4bb);rim.color.set(darkMode?0xb090d8:0xaed6d2);
+        plinth.color.set(darkMode?0x1b1523:0x202926);
+      }
       const flies = Array.isArray(brain.flies) && brain.flies.length ? brain.flies : [{...brain, id: 'fly-1'}];
       const ids = new Set(flies.map((state, index) => state.id ?? `fly-${index + 1}`));
       for (const [id, model] of flyObjects) { model.fly.visible = ids.has(id); model.shadow.visible = ids.has(id); model.noteLabel.visible=tombolaMode&&ids.has(id); model.marker.visible = ids.has(id) && id === (flies[0]?.id ?? 'fly-1'); }
@@ -454,7 +472,7 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
         fly.rotation.x = flying ? -.10 : 0;
         head.rotation.x = state.behavior === 'feeding' ? .17 + (running && !reducedMotion ? Math.sin(phase * 3) * .04 : 0) : 0;
         shadow.position.set(fly.position.x, .022, fly.position.z); shadow.scale.setScalar(1 + altitude * .4); shadow.material.opacity = .3 - altitude * .18;
-        marker.position.set(fly.position.x, .026, fly.position.z); marker.visible = index === 0;
+        marker.position.set(fly.position.x, .026, fly.position.z); marker.visible = index === 0; marker.material.color.set(darkMode?0xd8b8f4:0xc8eabc);
         model.noteLabel.visible=tombolaMode;
         if(tombolaMode){const pitches=music.layout?.pitches||[],names=music.layout?.noteNames||[],pitch=pitches.length?pitches[index%pitches.length]:60,noteText=names.length?names[index%names.length]:['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'][pitch%12]+(Math.floor(pitch/12)-1);if(noteText!==model.noteText){const replacement=labelSprite(noteText,index===0?'#edffcc':'#bedbc8');model.noteLabel.material.map.dispose();model.noteLabel.material.dispose();model.noteLabel.material=replacement.material;model.noteText=noteText;}model.noteLabel.position.set(fly.position.x,fly.position.y+.83,fly.position.z);}
         legs.forEach(l => {
@@ -473,9 +491,10 @@ window.createFlyScene = function createFlyScene(canvas, { onPlaceFruit } = {}) {
           w.pivot.rotation.z = w.side * (.045 + beat); w.pivot.rotation.y = w.side * (flying ? -.2 : -.4);
         });
       });
-      stringStage.visible = mode === 'strings'; gardenStage.visible = mode === 'ambient'||mode==='fruit';tombolaStage.visible=tombolaMode;table.visible=!tombolaMode;
+      stringStage.visible = mode === 'strings'; gardenStage.visible = mode === 'ambient'||mode==='fruit';tombolaStage.visible=tombolaMode;darkStage.visible=darkMode;table.visible=!tombolaMode;
+      darkLamp.material.emissiveIntensity=.2+clamp(music.ambience?.activity)*1.3;
       beginContacts(music, mode);
-      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode !== 'strings'&&!tombolaMode, now);
+      updateFruit(Array.isArray(brain.fruits) ? brain.fruits : [], music, mode !== 'strings'&&!tombolaMode&&!darkMode, now);
       if (mode === 'strings') updateStrings(music, now);
       updateContacts(music, now, mode);
       updateChamber(brain.tombola||{},mode,now,running,dt);
