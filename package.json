@@ -1,9 +1,9 @@
 {
   "name": "ableton-fly",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "1,045 fly neurons. Zero music theory. A local Ableton controller.",
+  "description": "A fruit-seeking fly turns its movements into a piano piece in Ableton Live.",
   "license": "MIT",
   "engines": {
     "node": ">=24.16.0"

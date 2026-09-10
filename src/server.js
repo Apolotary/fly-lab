@@ -10,7 +10,7 @@ export async function startServer(controller, html, { port = 9321 } = {}) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; frame-ancestors 'none'");
+    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; media-src blob:; frame-ancestors 'none'");
     const send = (status, data) => {
       res.writeHead(status, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(data));
@@ -26,6 +26,11 @@ export async function startServer(controller, html, { port = 9321 } = {}) {
     if (req.method === 'GET' && req.url === '/api/state') {
       if (authenticated) controller.heartbeat();
       return send(200, controller.snapshot());
+    }
+    if (req.method === 'GET' && req.url === '/api/midi') {
+      if (!authenticated) return send(403, { error: 'Reload the dashboard.' });
+      res.writeHead(200, { 'Content-Type': 'audio/midi', 'Content-Disposition': 'attachment; filename=fly-field-notes.mid' });
+      return res.end(controller.midiFile());
     }
     if (req.method !== 'POST' || req.url !== '/api/action') return send(404, { error: 'Not found.' });
     if (!authenticated) return send(403, { error: 'Reload the dashboard.' });

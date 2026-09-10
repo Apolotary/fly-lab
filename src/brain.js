@@ -5,8 +5,8 @@ export const VOICES = Object.freeze(['LF', 'LM', 'LH', 'RF', 'RM', 'RH']);
 const LEG_INDICES = VOICES.map((voice) => CIRCUIT.legOrder.indexOf(voice));
 const MOTOR_GROUPS = LEG_INDICES.map((leg) => CIRCUIT.neurons.flatMap((neuron, index) =>
   neuron.role === 'motor' && neuron.leg === leg ? [index] : []));
-// Display samples actual selected neurons; their display positions are illustrative.
-const DISPLAY_NODES = Array.from({ length: 64 }, (_, i) => Math.floor(i * CIRCUIT.neurons.length / 64));
+// Keep dataset indices so the renderer can use measured soma locations directly.
+const DISPLAY_NODES = CIRCUIT.neurons.map((_, i) => i);
 const clamp = (value, low = 0, high = 1) => Math.min(high, Math.max(low, value));
 const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
 const normalizedRate = (rate) => rate / (rate + 22);
@@ -39,7 +39,8 @@ export class FlyBrain {
     this.sim = new LocomotorSim(CIRCUIT);
     this.stimulus = { drive: 0.7, turn: 0 };
     this.activity = Array(6).fill(0);
-    this.nodes = Array(64).fill(0);
+    this.nodes = Array(DISPLAY_NODES.length).fill(0);
+    this.treat = 0;
     this.timeMs = 0;
     this.pendingMs = 0;
     this.nextInputMs = 0;
@@ -58,6 +59,12 @@ export class FlyBrain {
       if (!Number.isFinite(update[name])) throw new TypeError(`${name} must be finite`);
       this.stimulus[name] = clamp(update[name], name === 'turn' ? -1 : 0, 1);
     }
+    return this.snapshot();
+  }
+
+  // An explicitly engineered input pulse, not olfactory circuitry or learning.
+  feed() {
+    this.treat = 1;
     return this.snapshot();
   }
 
@@ -88,7 +95,9 @@ export class FlyBrain {
     }
     // This is artificial stimulation of identified descending neuron types.
     // Randomness changes the inputs; every motor output comes through the graph.
-    const { drive, turn } = this.stimulus;
+    const { turn } = this.stimulus;
+    const drive = clamp(this.stimulus.drive + this.treat * 0.25);
+    this.treat *= Math.exp(-10 / 6000);
     const turnInput = clamp(turn + this.input.turn * drive, -1, 1);
     for (const side of ['left', 'right']) {
       this.sim.setDescending('DNp09', side, drive * 72 * this.input[side]);
@@ -134,6 +143,8 @@ export class FlyBrain {
       activity: [...this.activity],
       spikes: this.sim.totalSpikes,
       drive: this.stimulus.drive,
+      effectiveDrive: clamp(this.stimulus.drive + this.treat * 0.25),
+      treat: this.treat,
       turn: this.stimulus.turn,
       x: this.x,
       y: this.y,

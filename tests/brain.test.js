@@ -70,7 +70,7 @@ test('long-running controls, display signals and arena positions stay finite and
   for (let tick = 0; tick < 1200; tick++) {
     const state = brain.step(50);
     assert.equal(state.activity.length, 6);
-    assert.equal(state.nodes.length, 64);
+    assert.equal(state.nodes.length, 1045);
     for (const value of [...state.activity, ...state.nodes, state.x, state.y]) {
       assert.ok(Number.isFinite(value) && value >= 0 && value <= 1);
     }
@@ -83,4 +83,15 @@ test('long-running controls, display signals and arena positions stay finite and
   assert.throws(() => brain.step(-1), RangeError);
   assert.throws(() => brain.step(1001), RangeError);
   assert.throws(() => brain.setStimulus({ turn: NaN }), TypeError);
+});
+
+test('banana pulse changes neural drive temporarily without changing the base stimulus', () => {
+  const fed = new FlyBrain(), plain = new FlyBrain();
+  fed.feed();
+  assert.equal(fed.snapshot().drive, .7);
+  assert.equal(fed.snapshot().treat, 1);
+  const boosted = run(fed, 2000), ordinary = run(plain, 2000);
+  assert.notDeepEqual(boosted.activity, ordinary.activity);
+  assert.ok(boosted.effectiveDrive > boosted.drive);
+  assert.ok(run(fed, 30000).treat < .01);
 });

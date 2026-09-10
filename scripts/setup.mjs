@@ -3,6 +3,7 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
+import { buildMidi } from './build-midi.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 process.chdir(root);
@@ -61,4 +62,5 @@ await writeFile(join(root, '.local/sdk/package.json'), JSON.stringify({ private:
 run('npm', ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--prefix', '.local/sdk']);
 run('npm', ['install', '--no-audit', '--no-fund']);
 await writeFile(join(root, '.local/config.json'), JSON.stringify({ livePath }, null, 2), { mode: 0o600 });
-console.log('\nReady. Open an empty Live Set, enable Extensions Developer Mode, then double-click Start Fly.command.');
+await buildMidi(root);
+console.log('\nReady. Open an empty Live Set, enable Extensions in Live Settings, then double-click Start Fly.command.');

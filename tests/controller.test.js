@@ -1,122 +1,226 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setImmediate } from 'node:timers/promises';
-import { FlyController, mapMusic } from '../src/controller.js';
+import { FlyController } from '../src/controller.js';
+import { FlyWorld } from '../src/world.js';
 
+function deferred() {
+  let resolve;
+  const promise = new Promise(yes => { resolve = yes; });
+  return { promise, resolve };
+}
 function fixture() {
   const calls = [];
   const adapter = {
     prepared: true,
-    music: { tempo: 120, voices: ['LF', 'LM', 'LH', 'RF', 'RM', 'RH'].map(name => ({ name, active: false, pan: 0, level: 0.2 })) },
-    snapshot() { return structuredClone(this.music); },
+    midi: { panic() { calls.push('midi:panic'); } },
+    snapshot() { return { tempo: 96, source: 'Fly Piano', midiConnected: true }; },
     async prepare() { calls.push('prepare'); },
-    async apply(music) { calls.push('apply'); this.music = music; },
-    async restore() { calls.push('restore'); this.music.tempo = 120; },
-    async panic() { calls.push('panic'); this.music.voices.forEach(voice => { voice.active = false; }); },
+    async start() { calls.push('start'); },
+    play(notes) { calls.push(['play', structuredClone(notes)]); },
+    async recordNotes(notes) { calls.push(['record', structuredClone(notes)]); },
+    async stop() { calls.push('stop'); },
+    async panic() { this.midi.panic(); calls.push('panic'); },
+    async close() { calls.push('close'); },
   };
-  const brain = {
-    steps: 0,
-    step() { this.steps++; },
-    snapshot() { return { activity: [0.2, 0.3, 0.4, 0.1, 0.2, 0.3], turn: 0 }; },
+  const world = {
+    steps: 0, elapsed: [], step(ms) { this.steps++; this.elapsed.push(ms); },
+    snapshot() { return { time: this.steps * .05, activity: [.2, .3, .4, .1, .2, .3] }; },
     setStimulus() {},
   };
-  return { adapter, brain, calls, controller: new FlyController(adapter, { brain, mode: 'live' }) };
+  const composer = {
+    notes: [], complete: false,
+    step() {
+      const note = { id: this.notes.length + 1, pitch: 60, velocity: 70, duration: .5, beat: this.notes.length / 2 };
+      this.notes.push(note);
+      return [note];
+    },
+    snapshot() { return { noteCount: this.notes.length }; },
+    midiFile() { return Buffer.from('MThd'); },
+  };
+  return { adapter, world, composer, calls, controller: new FlyController(adapter, { world, composer, mode: 'live' }) };
 }
+function silenceErrors(context) { context.mock.method(console, 'error', () => {}); }
 
-test('stop waits for the in-flight modulation before restoring tempo', async () => {
-  const { controller, adapter, calls, brain } = fixture();
-  let finishApply;
-  adapter.apply = async music => {
-    calls.push('apply:start');
-    await new Promise(resolve => { finishApply = resolve; });
-    adapter.music = music;
-    calls.push('apply:end');
+test('timer delays advance elapsed simulation time while capping catch-up work', async () => {
+  const { controller, world } = fixture();
+  await controller.action({ action: 'start' });
+  const start = controller.lastTick;
+  controller.tick(start + 50);
+  await controller.pending;
+  controller.tick(start + 200);
+  controller.tick(start + 1200);
+  controller.tick(start + 1190);
+  assert.deepEqual(world.elapsed, [50, 150, 250, 0]);
+  await controller.action({ action: 'stop' });
+});
+
+test('stop releases MIDI immediately, drains an in-flight clip save, then saves final notes', async () => {
+  const { controller, adapter, calls, world, composer } = fixture();
+  const write = deferred();
+  let first = true;
+  adapter.recordNotes = async notes => {
+    if (first) {
+      first = false; calls.push('record:start');
+      await write.promise; calls.push('record:end');
+    } else calls.push(['record:final', structuredClone(notes)]);
   };
   await controller.action({ action: 'start' });
   controller.tick();
-  assert.equal(typeof finishApply, 'function');
   const stopping = controller.action({ action: 'stop' });
   assert.equal(controller.running, false);
+  assert.equal(calls.at(-1), 'midi:panic', 'note-offs must not wait for the SDK write');
   controller.tick();
-  assert.equal(brain.steps, 1);
-  assert.deepEqual(calls, ['apply:start']);
-  finishApply();
+  assert.equal(world.steps, 1);
+  assert.ok(!calls.includes('stop'));
+  write.resolve();
   await stopping;
-  assert.deepEqual(calls, ['apply:start', 'apply:end', 'restore']);
-  assert.equal(adapter.music.tempo, 120);
+  assert.deepEqual(calls.slice(-3), ['record:end', ['record:final', composer.notes], 'stop']);
   assert.equal(controller.busy, false);
+  assert.equal(controller.saving, false);
 });
 
-test('a missing dashboard heartbeat automatically stops modulation', async () => {
-  const { controller, calls, brain } = fixture();
+test('missing heartbeat releases MIDI before a blocked save and stops exactly once', async () => {
+  const { controller, adapter, calls, world } = fixture();
+  const write = deferred();
+  let saves = 0;
+  adapter.recordNotes = async () => { if (++saves === 1) await write.promise; };
   await controller.action({ action: 'start' });
+  controller.tick();
   controller.lastSeen = 1000;
   controller.tick(11001);
-  await setImmediate();
   assert.equal(controller.running, false);
-  assert.equal(brain.steps, 0);
-  assert.deepEqual(calls, ['restore']);
-  assert.match(controller.snapshot().events[0].text, /paused|frozen/i);
+  assert.equal(world.steps, 1, 'the timeout tick cannot emit another gesture');
+  assert.equal(calls.at(-1), 'midi:panic');
+  write.resolve();
+  await controller.actionDone;
+  assert.equal(calls.filter(call => call === 'stop').length, 1);
+  assert.ok(controller.snapshot().events.some(event => /disconnected.*paused/i.test(event.text)));
   controller.tick(22000);
-  assert.deepEqual(calls, ['restore']);
+  assert.equal(calls.filter(call => call === 'stop').length, 1);
 });
 
-test('unsupported action objects and invalid stimuli cannot reach the adapter', async () => {
-  const { controller, adapter, calls } = fixture();
-  for (const input of [null, [], 'start', { action: 'delete' }, { action: 'eval', code: 'process.exit()' }, { action: 'stimulus', drive: NaN }]) {
+test('invalid actions and world inputs never reach the piano adapter', async () => {
+  const { adapter, calls } = fixture();
+  const controller = new FlyController(adapter, { world: new FlyWorld(), mode: 'live' });
+  for (const input of [null, [], 'start', { action: 'delete' }, { action: 'eval' }, { action: 'stimulus', drive: NaN },
+    { action: 'fruit', x: Infinity, y: .5 }, { action: 'fruit', x: .5, y: .5, kind: 'unknown' }]) {
     await assert.rejects(controller.action(input));
   }
-  adapter.prepared = false;
-  const originalError = console.error;
-  console.error = () => {};
-  try { await assert.rejects(controller.action({ action: 'start' }), /Build the demo first/); }
-  finally { console.error = originalError; }
+  assert.deepEqual(calls, []);
+  await controller.action({ action: 'clearFruit' });
+  await controller.action({ action: 'fruit', x: .2, y: .3, kind: 'banana' });
+  assert.equal(controller.snapshot().brain.fruits.length, 1);
   assert.deepEqual(calls, []);
 });
 
-test('music mapping limits tempo movement and mixer ranges for extreme neural values', () => {
-  const { adapter } = fixture();
-  const previous = adapter.snapshot();
-  const mapped = mapMusic({ activity: [1, 0, NaN, Infinity, -50, 2], turn: 20 }, previous);
-  assert.ok(Math.abs(mapped.tempo - previous.tempo) <= 2);
-  assert.ok(mapped.tempo >= 100 && mapped.tempo <= 145);
-  for (const voice of mapped.voices) {
-    assert.ok(voice.pan >= -0.65 && voice.pan <= 0.65);
-    assert.ok(voice.level >= 0.12 && voice.level <= 0.48);
-    assert.equal(typeof voice.active, 'boolean');
-  }
-});
-
-test('a failed modulation stops the fly, restores, mutes, and hides SDK error details', async () => {
+test('an unprepared piano start fails safely and hides private setup diagnostics', async context => {
+  silenceErrors(context);
   const { controller, adapter, calls } = fixture();
-  adapter.apply = async () => { throw new Error('/private/user-session/project-name.als private SDK payload'); };
-  await controller.action({ action: 'start' });
-  const originalError = console.error;
-  console.error = () => {};
-  try { controller.tick(); await controller.pending; }
-  finally { console.error = originalError; }
+  adapter.prepared = false;
+  adapter.start = async () => { throw new Error('private project-name.als payload'); };
+  await assert.rejects(controller.action({ action: 'start' }), /Prepare the piano first/);
   assert.equal(controller.running, false);
-  assert.equal(controller.applying, false);
-  assert.ok(calls.includes('panic'));
-  assert.ok(calls.includes('restore'));
-  assert.doesNotMatch(JSON.stringify(controller.snapshot()), /user-session|project-name|SDK payload/);
+  assert.equal(controller.busy, false);
+  assert.deepEqual(calls, ['midi:panic']);
+  assert.doesNotMatch(JSON.stringify(controller.snapshot()), /project-name|payload/);
 });
 
-test('shutdown drains an in-flight preparation before its final restore', async () => {
+test('a synchronous MIDI play error stops the fly, panics, and hides source details', async context => {
+  silenceErrors(context);
+  const { controller, adapter, calls, world } = fixture();
+  adapter.play = () => { throw new Error('private session path and SDK payload'); };
+  await controller.action({ action: 'start' });
+  controller.tick();
+  await controller.pending;
+  assert.equal(controller.running, false);
+  assert.ok(calls.includes('midi:panic'));
+  assert.ok(calls.includes('panic'));
+  assert.ok(!calls.some(call => Array.isArray(call) && call[0] === 'record'));
+  controller.tick();
+  assert.equal(world.steps, 1);
+  assert.doesNotMatch(JSON.stringify(controller.snapshot()), /session path|SDK payload/);
+});
+
+test('an asynchronous clip save failure also stops and panics the piano', async context => {
+  silenceErrors(context);
   const { controller, adapter, calls } = fixture();
-  let finishPrepare;
-  adapter.prepare = async () => {
-    calls.push('prepare:start');
-    await new Promise(resolve => { finishPrepare = resolve; });
-    calls.push('prepare:end');
-  };
+  adapter.recordNotes = async () => { throw new Error('private recording failure'); };
+  await controller.action({ action: 'start' });
+  controller.tick();
+  await controller.pending;
+  assert.equal(controller.running, false);
+  assert.equal(controller.saving, false);
+  assert.ok(calls.includes('panic'));
+  assert.doesNotMatch(JSON.stringify(controller.snapshot()), /private recording failure/);
+});
+
+test('Panic still disarms and mutes the track when the final clip save fails', async context => {
+  silenceErrors(context);
+  const { controller, adapter, calls } = fixture();
+  adapter.recordNotes = async () => { calls.push('record:failed'); throw new Error('clip is unavailable'); };
+  await controller.action({ action: 'start' });
+  await assert.rejects(controller.action({ action: 'panic' }));
+  assert.equal(controller.running, false);
+  assert.equal(calls[1], 'midi:panic', 'note-off must precede the final save');
+  assert.ok(calls.includes('panic'), 'native note-off must be followed by adapter disarm/mute cleanup');
+});
+
+test('overlapping actions are rejected while preparation is pending', async () => {
+  const { controller, adapter, calls } = fixture();
+  const prepare = deferred();
+  adapter.prepare = async () => { calls.push('prepare:start'); await prepare.promise; calls.push('prepare:end'); };
+  const preparing = controller.action({ action: 'prepare' });
+  await setImmediate();
+  await assert.rejects(controller.action({ action: 'start' }), /previous action/);
+  await assert.rejects(controller.action({ action: 'fruit', x: .2, y: .2 }), /previous action/);
+  prepare.resolve();
+  await preparing;
+  assert.equal(controller.busy, false);
+  assert.deepEqual(calls, ['prepare:start', 'prepare:end']);
+});
+
+test('shutdown waits for preparation before saving and closing the MIDI bridge', async () => {
+  const { controller, adapter, calls } = fixture();
+  const prepare = deferred();
+  adapter.prepare = async () => { calls.push('prepare:start'); await prepare.promise; calls.push('prepare:end'); };
   const preparing = controller.action({ action: 'prepare' });
   await setImmediate();
   const closing = controller.close();
   await setImmediate();
-  const beforeFinish = [...calls];
-  finishPrepare();
+  assert.deepEqual(calls, ['prepare:start', 'midi:panic']);
+  await assert.rejects(controller.action({ action: 'start' }), /shutting down/);
+  prepare.resolve();
   await Promise.all([preparing, closing]);
-  assert.deepEqual(beforeFinish, ['prepare:start'], 'shutdown must not restore while preparation can still write');
-  assert.deepEqual(calls, ['prepare:start', 'prepare:end', 'restore']);
+  assert.deepEqual(calls, ['prepare:start', 'midi:panic', 'prepare:end', ['record', []], 'close']);
+  assert.equal(controller.running, false);
+});
+
+test('shutdown stops an in-flight start and closes even when the final save fails', async context => {
+  silenceErrors(context);
+  const { controller, adapter, calls } = fixture();
+  const start = deferred();
+  adapter.start = async () => { calls.push('start:begin'); await start.promise; calls.push('start:end'); };
+  const starting = controller.action({ action: 'start' });
+  await setImmediate();
+  adapter.recordNotes = async () => { throw new Error('last save failed'); };
+  const closed = assert.rejects(controller.close(), /last save failed/);
+  start.resolve();
+  await Promise.all([starting, closed]);
+  assert.equal(controller.running, false);
+  assert.equal(calls.at(-1), 'close');
+  assert.equal(controller.busy, false);
+});
+
+test('composition completion releases notes and refuses to restart the finished piece', async context => {
+  silenceErrors(context);
+  const { controller, composer, calls } = fixture();
+  composer.step = function () { this.complete = true; return []; };
+  await controller.action({ action: 'start' });
+  controller.tick();
+  await controller.actionDone;
+  assert.equal(controller.running, false);
+  assert.ok(calls.includes('midi:panic'));
+  assert.ok(calls.includes('stop'));
+  await assert.rejects(controller.action({ action: 'start' }), /Piece complete/);
 });

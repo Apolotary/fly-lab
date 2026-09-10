@@ -1,18 +1,21 @@
-import { initialize } from '@ableton-extensions/sdk';
+import { initialize, Simpler } from '@ableton-extensions/sdk';
 import { FlyController } from './controller.js';
-import { LiveAdapter } from './live-adapter.js';
+import { PianoAdapter } from './piano-adapter.js';
+import { MidiOutput } from './midi-output.js';
 import { startServer } from './server.js';
 import html from '../ui/index.html';
 
 let app;
 let shutdownPromise;
-async function shutdown() {
-  shutdownPromise ??= app?.close();
-  await shutdownPromise;
-}
+async function shutdown() { shutdownPromise ??= app?.close(); await shutdownPromise; }
 export async function activate(activation) {
   const context = initialize(activation, '1.0.0');
-  app = await startServer(new FlyController(new LiveAdapter(context), { mode: 'live' }), html);
+  const midi = new MidiOutput({ binaryPath: __FLY_MIDI_PATH__ });
+  await midi.open();
+  const controller = new FlyController(new PianoAdapter(context, { midi, pianoPath: __FLY_PIANO_PATH__,
+    resolveSimpler: device => context.getObjectFromHandle(device.handle, Simpler) }), { mode: 'live' });
+  midi.onError = error => { controller.pending = controller.fail(error); };
+  try { app = await startServer(controller, html); } catch (error) { await midi.close(); throw error; }
   console.log(`Ableton Fly connected: ${app.url}`);
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
     shutdown().then(() => process.exit(0), () => process.exit(1));

@@ -17,6 +17,9 @@ output/
 *.wav
 *.aif
 *.aiff
+*.mid
+*.midi
+*.flac
 *.mp3
 *.mp4
 *.mov

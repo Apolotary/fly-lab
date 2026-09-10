@@ -1,39 +1,18 @@
-import { FlyBrain } from './brain.js';
-
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(v) ? v : lo));
-
-// A human-authored musical mapping. The input is simulated motor population activity.
-export function mapMusic(brain, previous) {
-  const activity = brain.activity.map(v => clamp(v, 0, 1));
-  const mean = activity.reduce((a, b) => a + b, 0) / 6;
-  const target = 105 + mean * 90;
-  const thresholds = [0.12, 0.12, 0.28, 0.115, 0.115, 0.17];
-  const tempo = Math.round(clamp(target, previous.tempo - 2, previous.tempo + 2) * 10) / 10;
-  return {
-    tempo: clamp(tempo, 100, 145),
-    voices: previous.voices.map((voice, i) => ({
-      name: voice.name,
-      active: activity[i] > thresholds[i] + (voice.active ? -0.01 : 0.01),
-      pan: clamp((activity[i] - activity[(i + 3) % 6]) * 2.2 + brain.turn * 0.35, -0.65, 0.65),
-      level: clamp(0.16 + activity[i] * 0.7, 0.12, 0.48),
-    })),
-  };
-}
+import { FlyWorld } from './world.js';
+import { GestureComposer } from './gesture-composer.js';
 
 export class FlyController {
-  constructor(adapter, { mode = 'demo', brain = new FlyBrain() } = {}) {
-    this.adapter = adapter;
-    this.mode = mode;
-    this.brain = brain;
+  constructor(adapter, { mode = 'demo', world = new FlyWorld(), composer = new GestureComposer() } = {}) {
+    Object.assign(this, { adapter, mode, world, composer });
     this.running = false;
     this.busy = false;
     this.error = null;
     this.events = [];
     this.pending = Promise.resolve();
     this.lastSeen = Date.now();
-    this.lastApply = 0;
+    this.lastSave = 0;
     this.timer = null;
-    this.addEvent(mode === 'live' ? 'Connected to Live. Build the demo in an empty Set.' : 'Rehearsal mode. Ableton is not connected.');
+    this.addEvent(mode === 'live' ? 'Connected to Live. Prepare the piano in an empty Set.' : 'Browser rehearsal. Prepare the piano to hear the movement mapping.');
   }
   addEvent(text) {
     this.events.unshift({ time: new Date().toLocaleTimeString('en-GB'), text });
@@ -42,84 +21,104 @@ export class FlyController {
   snapshot() {
     return { mode: this.mode, connection: !this.error, prepared: this.adapter.prepared,
       running: this.running, busy: this.busy, error: this.error,
-      brain: this.brain.snapshot(), music: this.adapter.snapshot(), events: this.events };
+      brain: this.world.snapshot(), music: { ...this.adapter.snapshot(), ...this.composer.snapshot() }, events: this.events };
   }
   heartbeat() { this.lastSeen = Date.now(); }
+  midiFile() { return this.composer.midiFile(); }
   async action(input) {
     if (this.closing) throw new Error('The fly is shutting down.');
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Expected an action object.');
     const { action } = input;
-    if (!['prepare', 'start', 'stop', 'panic', 'stimulus'].includes(action)) throw new Error('Unknown action.');
+    if (!['prepare', 'start', 'stop', 'panic', 'stimulus', 'fruit', 'clearFruit'].includes(action)) throw new Error('Unknown action.');
+    if (this.busy && action === 'panic') {
+      this.running = false;
+      this.adapter.midi?.panic();
+      await this.actionDone;
+      return this.action(input);
+    }
     if (this.busy) throw new Error('Still finishing the previous action.');
-    if (action === 'stimulus') {
-      for (const key of ['drive', 'turn']) if (input[key] !== undefined && !Number.isFinite(input[key])) throw new Error('Stimulus must be a finite number.');
-      this.brain.setStimulus({ drive: input.drive, turn: input.turn });
+    if (action === 'stimulus') { this.world.setStimulus({ drive: input.drive }); return this.snapshot(); }
+    if (action === 'fruit') {
+      this.world.addFruit({ x: input.x, y: input.y, kind: input.kind });
+      this.addEvent('Fruit placed. Its scent changes the fly’s route.');
       return this.snapshot();
     }
+    if (action === 'clearFruit') { this.world.clearFruit(); return this.snapshot(); }
     this.busy = true;
     let actionFinished;
     this.actionDone = new Promise(resolve => { actionFinished = resolve; });
-    // Stop simulation first; drain an in-flight write before restoring or muting.
     if (action !== 'start') this.running = false;
+    // Send note-offs immediately, before waiting for any SDK clip write.
+    if (action === 'stop' || action === 'panic') this.adapter.midi?.panic();
     try {
       await this.pending;
       if (action === 'prepare') {
         await this.adapter.prepare();
-        this.addEvent('Six fly tracks ready. Press Play in Live from bar 1, then release the fly.');
+        this.addEvent('Piano ready at 96 BPM. Keep Live stopped; the fly plays its MIDI input directly.');
       } else if (action === 'start') {
-        if (!this.adapter.prepared) throw new Error('Build the demo first.');
+        if (this.composer.complete) throw new Error('Piece complete. Save MIDI and restart for another piece.');
+        await this.adapter.start();
         this.running = true;
-        this.lastApply = 0;
+        this.lastSave = 0;
+        this.lastTick = Date.now();
         this.heartbeat();
-        this.addEvent('The fly has the mixer. Neural activity controls all six voices.');
-      } else if (action === 'stop') {
-        await this.adapter.restore();
-        this.addEvent('Fly frozen. Original tempo restored. Live playback stays under your control.');
+        this.addEvent('Exploring. Position becomes pitch; movement and landings make the rhythm.');
       } else {
-        await this.adapter.panic();
-        await this.adapter.restore();
-        this.addEvent('Fly tracks muted. Press Stop in Live to stop the transport.');
+        try { await this.adapter.recordNotes(this.composer.notes); }
+        finally {
+          if (action === 'panic') await this.adapter.panic();
+          else await this.adapter.stop();
+        }
+        this.addEvent(action === 'panic' ? 'Piano muted and all notes released.' : 'Fly paused. Notes saved in Live; press Play there to replay, or Save MIDI.');
       }
       this.error = null;
     } catch (error) {
       this.running = false;
-      // Do not put SDK errors (which may contain private project paths) into the browser.
-      this.error = action === 'start' && !this.adapter.prepared ? 'Build the demo first.' : 'Live action failed. Stop playback and check the local terminal.';
-      if (this.mode === 'demo') this.error = error.message;
+      this.adapter.midi?.panic();
+      this.error = !this.adapter.prepared ? 'Prepare the piano first. Check the local terminal if setup failed.' : 'Live action failed. Check the local terminal and reconnect if the Set changed.';
+      if (this.mode === 'demo' || this.composer.complete) this.error = error.message;
       console.error('Ableton Fly action failed:', error);
       throw new Error(this.error);
     } finally { this.busy = false; actionFinished(); }
     return this.snapshot();
   }
+  fail(error) {
+    this.running = false;
+    this.error = 'Piano connection lost. Reconnect the extension before continuing.';
+    this.addEvent(this.error);
+    console.error('Ableton Fly performance failed:', error);
+    return this.adapter.panic().catch(() => {});
+  }
   tick(now = Date.now()) {
     if (!this.running || this.busy) return;
-    // A browser crash or closed recording window must not leave autonomous writes running.
     if (now - this.lastSeen > 10000) {
       this.action({ action: 'stop' }).catch(() => {});
       this.addEvent('Dashboard disconnected; fly paused automatically.');
       return;
     }
-    this.brain.step(50);
-    if (now - this.lastApply < 1000 || this.applying) return;
-    this.lastApply = now;
-    this.applying = true;
-    this.pending = this.adapter.apply(mapMusic(this.brain.snapshot(), this.adapter.snapshot()))
-      .catch(async error => {
-        this.running = false;
-        this.error = 'Lost control of Live. Stop playback and reconnect the extension.';
-        this.addEvent(this.error);
-        console.error('Ableton Fly modulation failed:', error);
-        await Promise.allSettled([this.adapter.panic(), this.adapter.restore()]);
-      }).finally(() => { this.applying = false; });
+    try {
+      const elapsed = Math.min(250, Math.max(0, now - (this.lastTick ?? now - 50)));
+      this.lastTick = now;
+      this.world.step(elapsed);
+      const notes = this.composer.step(this.world.snapshot());
+      if (notes.length) this.adapter.play(notes);
+      if (this.composer.complete) { this.action({ action: 'stop' }).catch(() => {}); return; }
+    } catch (error) { this.pending = this.fail(error); return; }
+    if (now - this.lastSave < 2000 || this.saving) return;
+    this.lastSave = now;
+    this.saving = true;
+    this.pending = this.adapter.recordNotes(this.composer.notes)
+      .catch(error => this.fail(error)).finally(() => { this.saving = false; });
   }
   startTimer() { this.timer ??= setInterval(() => this.tick(), 50); }
   async close() {
     this.closing = true;
     clearInterval(this.timer);
     this.running = false;
+    this.adapter.midi?.panic();
     await this.actionDone;
     this.running = false;
     await this.pending;
-    await this.adapter.restore();
+    try { await this.adapter.recordNotes(this.composer.notes); } finally { await this.adapter.close(); }
   }
 }

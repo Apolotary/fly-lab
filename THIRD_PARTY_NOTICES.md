@@ -5,7 +5,7 @@
 The local 3D renderer uses [Three.js](https://threejs.org/), version 0.186.0,
 under its MIT License (copyright Three.js authors). Its license notice is
 retained in the compiled browser script and `ui/licenses/three.txt`.
-The fly and miniature mixer geometry
+The fly, garden and fruit geometry
 are original procedural artwork; no models or media from the reference videos
 are copied.
 
@@ -18,9 +18,10 @@ from [DesktopFly](https://github.com/DenisSergeevitch/desktop-fly), commit
 Copyright (c) 2026 Denis Shiryaev. Licensed under the MIT License; the full
 upstream notice is in `src/vendor/desktop-fly/LICENSE`.
 
-Ableton Fly's original wrapper supplies seeded artificial descending-neuron
-stimulation and converts the simulated motor rates into musical control values.
-Its arena fly is an illustration driven by those values. It does not reproduce
+Ableton Fly's original wrapper supplies artificial descending-neuron stimulation
+from a seeded, modeled environment. Simulated motor rates gate movement and
+turning; an original gesture mapping converts the resulting world state into
+piano notes. Its displayed fly illustrates that simulated state. It does not reproduce
 DesktopFly's articulated body or its female FlyWire brain model.
 
 ## MaleCNS v1.0 circuit data
@@ -56,6 +57,37 @@ zero direct current while their anatomical edges and raw counts are retained.
 The simulation is not a whole fly brain, a biologically validated animal,
 recorded consciousness, or a fly that has learned music.
 
+The anatomical viewer uses `annotations.somaLocation` for 880 located neurons,
+with the dataset's coordinate scale of 8 nm per unit. Neurons without positions
+are omitted from the view but retained in the simulation. Point colors show
+modeled firing rates, not recorded activity. Fruit attraction, hunger, feeding,
+rest and flight height are engineered behavior rules. Fruit kinds have equal
+attraction in the model. Olfactory circuitry, biological reward learning and
+musical feedback are not modeled.
+
 No female FlyWire-derived data (which have different license terms) are bundled.
 The upstream code license's older blanket data note is superseded for this
 MaleCNS file by its [specific data license](https://github.com/DenisSergeevitch/desktop-fly/blob/32b00011e83c3dc85fa3ea0b3934155b04f1635d/data/DATA_LICENSE.md).
+
+
+## Native MIDI bridge and preview instrument
+
+`native/midi-bridge.swift` and its JavaScript wrapper are original MIT-licensed
+project code. They use the CoreMIDI and Foundation frameworks provided by macOS;
+those Apple frameworks are not redistributed. The locally compiled bridge
+binary and compiler cache are excluded from Git.
+
+The browser preview instrument is an original oscillator-based sound, generated
+locally through the Web Audio API. It contains no recorded piano samples.
+
+## Ableton SDK and factory piano sample
+
+The Ableton Extensions SDK is proprietary and supplied by the user during local
+setup. Its package archives, extracted packages and compiled extension bundles
+are excluded from Git. No SDK source or documentation is redistributed here.
+
+The Live piano instrument loads a Grand Piano sample from the user's installed
+Ableton factory content into Simpler. The sample remains local and is not copied
+into this repository, bundled, uploaded or distributed with MIDI exports. Ableton
+software and factory content retain their respective license terms. This project
+is independent of Ableton.
